@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+python-multipart
+# LangChain & AI
+langchain
+langchain-community
+langchain-google-vertexai
+langchain-ollama
+# Utilities
+pymupdf
+requests
+pillow
+numpy
+#frontend
+streamlit

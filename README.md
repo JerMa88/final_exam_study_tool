@@ -41,4 +41,36 @@ We use Docker to run ArcadeDB. This requires Docker and Docker Compose to be ins
    - **User**: `root`
    - **Password**: `securepassword`
 
-   
+
+### Backend API (FastAPI + LangChain)
+
+The backend provides PDF ingestion, embedding (Vertex/Ollama), and a RAG chat interface.
+
+1. **Environment Setup**:
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+2. **Running the App**:
+   ```bash
+   uvicorn app.langchain.main:app --reload
+   ```
+
+3. **API Usage**:
+   - **Upload PDF**:
+     ```bash
+     curl -X POST -F "file=@/path/to/slides.pdf" -F "type=slide" http://localhost:8000/upload
+     ```
+   - **Chat**:
+     ```bash
+     curl -X POST -H "Content-Type: application/json" -d '{"message": "Explain this slide", "model": "models/gemini-2.0-flash"}' http://localhost:8000/chat
+     ```
+
+   **Supported Models**:
+   - `models/gemma-3n-e4b-it`
+   - `models/gemma-3-12b-it`
+   - `models/gemma-3-27b-it`
+   - `models/gemini-2.0-flash`
+   - `models/gemini-3-pro-preview`
