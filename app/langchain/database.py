@@ -98,9 +98,12 @@ class ArcadeDBClient:
             return {}
         return response.json()
 
-    def query(self, query: str, language: str = "sql") -> List[Dict]:
+    def query(self, query: str, language: str = "sql", params: Dict = None) -> List[Dict]:
         url = f"{self.base_url}/query/{self.db_name}"
         payload = {"command": query, "language": language}
+        if params:
+            payload["params"] = params
+            
         response = requests.post(url, json=payload, auth=self.auth, headers=self.headers)
         if response.status_code != 200:
              print(f"Query failed: {query} -> {response.text}")
@@ -110,28 +113,11 @@ class ArcadeDBClient:
     def document_exists(self, filename: str) -> bool:
         """Check if a document with the given filename already exists."""
         query = "SELECT FROM Document WHERE filename = ?"
-        payload = {
-            "command": query,
-            "params": {"0": filename}
-        }
-        res = self.query(query, params={"0": filename}) # Using helper if updated, but self.query signature is weird above. 
-        # Wait, self.query implementation above uses payload manually and doesn't accept params arg in signature?
-        # Let's fix self.query or just reimplement request here?
-        # self.query signature: def query(self, query: str, language: str = "sql") -> List[Dict]
-        # It doesn't take params. I should update self.query to take params or just do request here.
-        
-        # Re-implementing request for safety to avoid changing public signature if used elsewhere (only internally used for now)
-        url = f"{self.base_url}/query/{self.db_name}"
-        payload = {
-            "command": query,
-            "language": "sql",
-            "params": {"0": filename}
-        }
-        response = requests.post(url, json=payload, auth=self.auth, headers=self.headers)
-        if response.status_code == 200:
-             result = response.json().get("result", [])
-             return len(result) > 0
-        return False
+        # params keys for SQL usually parameter placeholders like ? or :param.
+        # ArcadeDB HTTP API with 'sql' language and 'params' map usually uses ? or positional 0,1..
+        # Let's stick to the map using "0" as key for first ?
+        res = self.query(query, params={"0": filename})
+        return len(res) > 0
 
     def insert_document(self, filename: str, doc_type: str) -> str:
         """Insert document metadata and return RID."""

@@ -15,6 +15,8 @@ class IngestionPipeline:
     def _get_embedder(self, provider: str):
         try:
             if provider == "ollama":
+                from .utils import ensure_ollama_model
+                ensure_ollama_model("embedding-gemma")
                 return OllamaEmbeddings(model="embedding-gemma")
             else:
                 # Default to Vertex AI
@@ -27,6 +29,8 @@ class IngestionPipeline:
             # Let's try to return Ollama if Vertex failed
             if provider != "ollama":
                 print("Falling back to OllamaEmbeddings(model='nomic-embed-text')...")
+                from .utils import ensure_ollama_model
+                ensure_ollama_model("nomic-embed-text")
                 return OllamaEmbeddings(model="nomic-embed-text")
             raise e
 

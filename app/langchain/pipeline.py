@@ -12,13 +12,20 @@ class RAGPipeline:
         self.retriever = retriever
         self.db = db_client
     
-    def _get_llm(self, model_name: str, provider: str = "vertex"):
-        if provider == "ollama":
-            # Strip 'models/' prefix if present for local Ollama usage
-            local_model = model_name.replace("models/", "")
-            return ChatOllama(model=local_model, temperature=0.7)
-        # Default to VertexAI
-        return ChatVertexAI(model_name=model_name, temperature=0.7)
+    def _get_llm(self, model_name: str, llm_provider: str = "vertex"):
+        if llm_provider == "ollama":
+            # For Ollama, the model name is passed directly (e.g. "gemma:2b")
+            # But frontend sends "models/gemma-3n-e4b-it", we need to map or strip
+            # Assuming simplified mapping or user passes exact Ollama tag if they know it.
+            # Let's strip "models/" prefix if present for Ollama usage
+            clean_name = model_name.replace("models/", "")
+            
+            from .utils import ensure_ollama_model
+            ensure_ollama_model(clean_name)
+            
+            return ChatOllama(model=clean_name)
+        else:
+            return ChatVertexAI(model_name=model_name)
 
     def chat_stream(self, query: str, conversation_id: Optional[str] = None, model_name: str = "models/gemini-2.0-flash", llm_provider: str = "vertex") -> Iterator[str]:
         import json
