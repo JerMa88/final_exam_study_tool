@@ -36,8 +36,8 @@ with st.sidebar:
     
     # File Upload
     st.subheader("Upload Documents")
-    uploaded_file = st.file_uploader("Upload PDF", type=["pdf"])
-    doc_type = st.selectbox("Document Type", ["slide", "textbook"])
+    uploaded_file = st.file_uploader("Upload PDF or Text", type=["pdf", "txt"])
+    doc_type = st.selectbox("Document Type", ["slide", "textbook", "paper"])
     
     if uploaded_file and st.button("Ingest File"):
         with st.spinner("Ingesting..."):

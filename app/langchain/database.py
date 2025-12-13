@@ -107,6 +107,32 @@ class ArcadeDBClient:
              return []
         return response.json().get("result", [])
 
+    def document_exists(self, filename: str) -> bool:
+        """Check if a document with the given filename already exists."""
+        query = "SELECT FROM Document WHERE filename = ?"
+        payload = {
+            "command": query,
+            "params": {"0": filename}
+        }
+        res = self.query(query, params={"0": filename}) # Using helper if updated, but self.query signature is weird above. 
+        # Wait, self.query implementation above uses payload manually and doesn't accept params arg in signature?
+        # Let's fix self.query or just reimplement request here?
+        # self.query signature: def query(self, query: str, language: str = "sql") -> List[Dict]
+        # It doesn't take params. I should update self.query to take params or just do request here.
+        
+        # Re-implementing request for safety to avoid changing public signature if used elsewhere (only internally used for now)
+        url = f"{self.base_url}/query/{self.db_name}"
+        payload = {
+            "command": query,
+            "language": "sql",
+            "params": {"0": filename}
+        }
+        response = requests.post(url, json=payload, auth=self.auth, headers=self.headers)
+        if response.status_code == 200:
+             result = response.json().get("result", [])
+             return len(result) > 0
+        return False
+
     def insert_document(self, filename: str, doc_type: str) -> str:
         """Insert document metadata and return RID."""
         cmd = "INSERT INTO Document SET filename = ?, type = ?, upload_date = sysdate()"

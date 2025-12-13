@@ -1,3 +1,6 @@
+# user uploaded files
+database/PDFs/
+
 # ArcadeDB
 database/ArcadeDB/arcadedb-24.10.1/
 database/ArcadeDB/arcadedb.tar.gz

@@ -13,14 +13,24 @@ class IngestionPipeline:
         self.embedder = self._get_embedder(embedding_provider)
     
     def _get_embedder(self, provider: str):
-        if provider == "ollama":
-            # Assuming 'embedding-gemma' model name or similar
-            return OllamaEmbeddings(model="embedding-gemma") # Or nomic-embed-text if pulled
-        else:
-            # Default to Vertex AI
-            return VertexAIEmbeddings(model_name="gemini-embedding-001") # or text-embedding-005
+        try:
+            if provider == "ollama":
+                return OllamaEmbeddings(model="embedding-gemma")
+            else:
+                # Default to Vertex AI
+                return VertexAIEmbeddings(model_name="gemini-embedding-001")
+        except Exception as e:
+            print(f"Warning: Failed to initialize embedder '{provider}': {e}")
+            # Fallback for startup safety, or re-raise if strict
+            # For this user app, we fallback to Ollama if Vertex fails or vice versa?
+            # Or just return None and fail at usage time?
+            # Let's try to return Ollama if Vertex failed
+            if provider != "ollama":
+                print("Falling back to OllamaEmbeddings(model='nomic-embed-text')...")
+                return OllamaEmbeddings(model="nomic-embed-text")
+            raise e
 
-    def process_pdf(self, file_path: str, doc_type: Literal['slide', 'textbook']):
+    def process_pdf(self, file_path: str, doc_type: Literal['slide', 'textbook', 'paper']):
         filename = os.path.basename(file_path)
         print(f"Processing {filename} as {doc_type}...")
         
@@ -31,31 +41,37 @@ class IngestionPipeline:
             return
 
         # 2. Extract and Chunk
-        doc = fitz.open(file_path)
         chunks = []
         
-        if doc_type == 'slide':
-            # One chunk per page
-            for i, page in enumerate(doc):
-                text = page.get_text()
-                if text.strip():
-                    chunks.append({"content": text, "page": i + 1})
+        if file_path.lower().endswith(".txt"):
+            # Text file processing
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    text = f.read()
+                # Treat whole text file as potentially one large content to be split
+                chunks.append({"content": text, "page": 1})
+            except Exception as e:
+                print(f"Error reading text file: {e}")
+                return
         else:
-            # Recursive split for textbooks
-            full_text = ""
-            page_map = [] # character index to page number roughly
-            for i, page in enumerate(doc):
-                text = page.get_text()
-                full_text += text + "\n"
-                # This mapping is naive for splitters, but simplified: 
-                # passing page numbers in splitters is complex without custom splitters.
-                # For now, we will chunk page by page then split chunks if too large, 
-                # OR just split the whole text and lose precise page tracking.
-                # Better approach for textbooks: Chunk per page, then sub-chunk if needed.
-                chunks.append({"content": text, "page": i + 1})
-            
-            # Post-process chunks if they are too big? 
-            # For simplicity, let's Stick to page-based for both but use splitter for large pages
+            # PDF processing
+            doc = fitz.open(file_path)
+            if doc_type == 'slide':
+                # One chunk per page
+                for i, page in enumerate(doc):
+                    text = page.get_text()
+                    if text.strip():
+                        chunks.append({"content": text, "page": i + 1})
+            else:
+                # Recursive split for textbooks and papers
+                # For papers, we might want different logic, but treating like textbook is safe default
+                for i, page in enumerate(doc):
+                    text = page.get_text()
+                    if text.strip():
+                        chunks.append({"content": text, "page": i + 1})
+        
+        # Split chunks if needed (for textbooks, papers, and text files)
+        if doc_type in ['textbook', 'paper'] or file_path.lower().endswith(".txt"):
             splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
             final_chunks = []
             for c in chunks:
@@ -63,7 +79,7 @@ class IngestionPipeline:
                 for s in splits:
                     final_chunks.append({"content": s, "page": c["page"]})
             chunks = final_chunks
-
+        
         # 3. Embed and Insert
         print(f"Embedding {len(chunks)} chunks...")
         for chunk in chunks:
