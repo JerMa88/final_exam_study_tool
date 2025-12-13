@@ -27,6 +27,7 @@ class ChatRequest(BaseModel):
     conversation_id: Optional[str] = None
     model: str = "models/gemini-2.0-flash"
     embedding_provider: str = "vertex" # "vertex" or "ollama"
+    llm_provider: str = "vertex" # "vertex" or "ollama"
 
 @app.post("/upload")
 async def upload_file(
@@ -59,7 +60,7 @@ async def chat(req: ChatRequest):
         bot.retriever.pipeline = IngestionPipeline(db_client, req.embedding_provider)
 
     return StreamingResponse(
-        bot.chat_stream(req.message, req.conversation_id, req.model),
+        bot.chat_stream(req.message, req.conversation_id, req.model, req.llm_provider),
         media_type="text/plain"
     )
 

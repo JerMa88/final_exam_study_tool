@@ -1,5 +1,6 @@
 from typing import Iterator, Optional
 from langchain_google_vertexai import ChatVertexAI
+from langchain_community.chat_models import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
@@ -11,16 +12,15 @@ class RAGPipeline:
         self.retriever = retriever
         self.db = db_client
     
-    def _get_llm(self, model_name: str):
-        # Allow passing custom model names directly to VertexAI
-        # If 'locally' is implied for some gemma models, we might need Ollama support here too.
-        # But user said "locally or on google cloud" for gemma. 
-        # For simplicity, we default to VertexAI for the 'models/' prefix 
-        # unless we detect it's an ollama model (usually no 'models/' prefix or specific config).
-        # We will assume these are valid vertex model IDs or mapped accordingly.
+    def _get_llm(self, model_name: str, provider: str = "vertex"):
+        if provider == "ollama":
+            # Strip 'models/' prefix if present for local Ollama usage
+            local_model = model_name.replace("models/", "")
+            return ChatOllama(model=local_model, temperature=0.7)
+        # Default to VertexAI
         return ChatVertexAI(model_name=model_name, temperature=0.7)
 
-    def chat_stream(self, query: str, conversation_id: Optional[str] = None, model_name: str = "models/gemini-2.0-flash") -> Iterator[str]:
+    def chat_stream(self, query: str, conversation_id: Optional[str] = None, model_name: str = "models/gemini-2.0-flash", llm_provider: str = "vertex") -> Iterator[str]:
         # 1. Retrieve
         context_docs = self.retriever.search(query, limit=5)
         context_str = "\n\n".join(context_docs)
@@ -40,7 +40,7 @@ class RAGPipeline:
         Response:"""
         prompt = ChatPromptTemplate.from_template(template)
         
-        llm = self._get_llm(model_name)
+        llm = self._get_llm(model_name, llm_provider)
         
         chain = (
             {"context": lambda x: context_str, "question": lambda x: x}

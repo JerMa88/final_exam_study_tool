@@ -15,10 +15,10 @@ class IngestionPipeline:
     def _get_embedder(self, provider: str):
         if provider == "ollama":
             # Assuming 'embedding-gemma' model name or similar
-            return OllamaEmbeddings(model="nomic-embed-text") # Or embedding-gemma if pulled
+            return OllamaEmbeddings(model="embedding-gemma") # Or nomic-embed-text if pulled
         else:
             # Default to Vertex AI
-            return VertexAIEmbeddings(model_name="text-embedding-004")
+            return VertexAIEmbeddings(model_name="gemini-embedding-001") # or text-embedding-005
 
     def process_pdf(self, file_path: str, doc_type: Literal['slide', 'textbook']):
         filename = os.path.basename(file_path)
