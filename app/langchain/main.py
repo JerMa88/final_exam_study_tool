@@ -64,6 +64,16 @@ async def chat(req: ChatRequest):
         media_type="text/plain"
     )
 
+@app.post("/search")
+async def search(req: ChatRequest):
+    # Re-use ChatRequest structure for simplicity (message = query)
+    # Update retriever's embedder if needed
+    if req.embedding_provider != bot.retriever.pipeline.embedder.__class__.__name__:
+        bot.retriever.pipeline = IngestionPipeline(db_client, req.embedding_provider)
+    
+    results = retriever.search(req.message, limit=5)
+    return {"results": results}
+
 @app.delete("/reset")
 def reset_db():
     # Dangerous! For dev only.

@@ -21,6 +21,8 @@ class RAGPipeline:
         return ChatVertexAI(model_name=model_name, temperature=0.7)
 
     def chat_stream(self, query: str, conversation_id: Optional[str] = None, model_name: str = "models/gemini-2.0-flash", llm_provider: str = "vertex") -> Iterator[str]:
+        import json
+        
         # 1. Retrieve
         context_docs = self.retriever.search(query, limit=5)
         context_str = "\n\n".join(context_docs)
@@ -40,6 +42,10 @@ class RAGPipeline:
         Response:"""
         prompt = ChatPromptTemplate.from_template(template)
         
+        # Debug: Yield prompt info
+        filled_prompt = prompt.format(context=context_str, question=query)
+        yield json.dumps({"type": "debug", "prompt": filled_prompt}) + "\n"
+        
         llm = self._get_llm(model_name, llm_provider)
         
         chain = (
@@ -54,14 +60,10 @@ class RAGPipeline:
         try:
             for chunk in chain.stream(query):
                 full_response += chunk
-                yield chunk
+                yield json.dumps({"type": "token", "content": chunk}) + "\n"
         except Exception as e:
             error_msg = f"Error during generation: {e}"
             full_response += error_msg
-            yield error_msg
+            yield json.dumps({"type": "token", "content": error_msg}) + "\n"
             
         self.db.add_message(conversation_id, "assistant", full_response)
-        
-        # Return conversation ID via side-channel or assume client tracks it?
-        # Typically the generator yields content. We might need to yield metadata first?
-        # For this simple implementation, we just stream content.
