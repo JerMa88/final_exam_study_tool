@@ -1,3 +1,7 @@
+# ArcadeDB
+database/ArcadeDB/arcadedb-24.10.1/
+database/ArcadeDB/arcadedb.tar.gz
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  arcadedb:
+    image: ghcr.io/arcadedata/arcadedb:latest
+    container_name: arcadedb
+    environment:
+      - ARCADEDB_ROOT_PASSWORD=securepassword
+      - JAVA_OPTS=-Darcadedb.server.rootPassword=securepassword
+    ports:
+      - "2480:2480" # HTTP
+      - "2424:2424" # Binary
+    volumes:
+      - ./database/ArcadeDB/arcadedb-24.10.1/databases:/home/arcadedb/databases
+      - ./database/ArcadeDB/arcadedb-24.10.1/config:/home/arcadedb/config
+      - ./database/ArcadeDB/arcadedb-24.10.1/log:/home/arcadedb/log
+    restart: unless-stopped
