@@ -5,11 +5,20 @@ python-multipart
 langchain
 langchain-community
 langchain-google-vertexai
+langchain_google_genai
 langchain-ollama
 # Utilities
 pymupdf
 requests
 pillow
 numpy
-#frontend
+python-dotenv
+
+# Google GenAI (API Key)
+langchain-google-genai
+
+# Testing
+pytest
+pytest-asyncio
+# Frontend
 streamlit

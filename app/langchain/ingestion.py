@@ -3,6 +3,7 @@ import os
 from typing import List, Literal, Optional
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_vertexai import VertexAIEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.embeddings import OllamaEmbeddings
 # from langchain_ollama import OllamaEmbeddings # Newer import if available, fallback to community
 from .database import ArcadeDBClient
@@ -16,17 +17,18 @@ class IngestionPipeline:
         try:
             if provider == "ollama":
                 from .utils import ensure_ollama_model
-                ensure_ollama_model("embedding-gemma")
-                return OllamaEmbeddings(model="embedding-gemma")
+                ensure_ollama_model("gemma:2b")
+                return OllamaEmbeddings(model="gemma:2b")
             else:
+                # Check for API Key
+                if os.getenv("GOOGLE_API_KEY"):
+                    return GoogleGenerativeAIEmbeddings(model="models/embedding-001")
                 # Default to Vertex AI
                 return VertexAIEmbeddings(model_name="gemini-embedding-001")
         except Exception as e:
             print(f"Warning: Failed to initialize embedder '{provider}': {e}")
             # Fallback for startup safety, or re-raise if strict
-            # For this user app, we fallback to Ollama if Vertex fails or vice versa?
-            # Or just return None and fail at usage time?
-            # Let's try to return Ollama if Vertex failed
+            # For this user app, we fallback to Ollama if Vertex/GenAI fails
             if provider != "ollama":
                 print("Falling back to OllamaEmbeddings(model='nomic-embed-text')...")
                 from .utils import ensure_ollama_model

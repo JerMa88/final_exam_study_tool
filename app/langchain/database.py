@@ -28,24 +28,12 @@ class ArcadeDBClient:
                 print(f"Database {self.db_name} created.")
 
     def _db_exists(self) -> bool:
-        """Check if database exists."""
+        """Check if database exists by attempting to connect."""
         try:
-            response = requests.get(
-                f"{self.base_url}/server",
-                json={"command": f"exists database {self.db_name}"},
-                auth=self.auth,
-                headers=self.headers
-            )
-            # The API behavior for 'exists' might vary, checking list of DBs is safer often, 
-            # but let's try a simple command or check if we can connect.
-            # actually server command 'exists database' might not be standard HTTP API.
-            # Let's try querying the DB directly, if 404/401 it might not exist or need creation.
-            # Alternative: Get list of databases
-            res = requests.get(f"{self.base_url}/server/databases", auth=self.auth)
-            if res.status_code == 200:
-                dbs = res.json().get("result", [])
-                return self.db_name in dbs
-            return False
+            url = f"{self.base_url}/query/{self.db_name}"
+            payload = {"command": "SELECT 1", "language": "sql"}
+            res = requests.post(url, json=payload, auth=self.auth, headers=self.headers)
+            return res.status_code == 200
         except Exception as e:
             print(f"Error checking DB existence: {e}")
             return False
@@ -56,45 +44,48 @@ class ArcadeDBClient:
         # Note: IF NOT EXISTS might not be supported for all commands in this version's SQL parser
         # We will attempt creation and ignore errors for now (simulating if not exists)
         commands = [
-            "CREATE TYPE Document IF NOT EXISTS",
-            "CREATE PROPERTY Document.filename STRING", 
-            "CREATE PROPERTY Document.type STRING", 
-            "CREATE PROPERTY Document.upload_date DATETIME",
+            "CREATE VERTEX TYPE SourceFile IF NOT EXISTS",
+            "CREATE PROPERTY SourceFile.filename STRING", 
+            "CREATE PROPERTY SourceFile.type STRING", 
+            "CREATE PROPERTY SourceFile.upload_date DATETIME",
             
-            "CREATE TYPE Chunk IF NOT EXISTS",
+            "CREATE VERTEX TYPE Chunk IF NOT EXISTS",
             "CREATE PROPERTY Chunk.content STRING",
             "CREATE PROPERTY Chunk.page_number INTEGER",
             "CREATE PROPERTY Chunk.embedding LIST", # FLOAT_LIST might be LIST in simplified SQL
             
-            # Index syntax: CREATE INDEX <name> ON <type> (<prop>) ...
-            "CREATE INDEX Chunk_embedding ON Chunk (embedding) VECTOR NOTUNIQUE",
+            # Index syntax: CREATE INDEX ON <type> (<prop>) ... (Nameless seems safer for some parsers)
+            "CREATE INDEX ON Chunk (embedding) NOTUNIQUE",
             
-            "CREATE TYPE HAS_CHUNK IF NOT EXISTS", # Edge type matching naming convention? 
-            # In ArcadeDB, Edge types are just Types extending E. 
-            # Use: CREATE EXTENSION
-            # Or just CREATE TYPE HAS_CHUNK IF NOT EXISTS EXTENDS E
-            "CREATE TYPE HAS_CHUNK IF NOT EXISTS EXTENDS E",
-
-            "CREATE TYPE Conversation IF NOT EXISTS",
+            "CREATE EDGE TYPE HAS_CHUNK IF NOT EXISTS", 
+            
+            "CREATE VERTEX TYPE Conversation IF NOT EXISTS",
             "CREATE PROPERTY Conversation.started_at DATETIME",
             
-            "CREATE TYPE Message IF NOT EXISTS",
+            "CREATE VERTEX TYPE Message IF NOT EXISTS",
             "CREATE PROPERTY Message.role STRING",
             "CREATE PROPERTY Message.content STRING",
             "CREATE PROPERTY Message.timestamp DATETIME",
             
-            "CREATE TYPE HAS_MESSAGE IF NOT EXISTS EXTENDS E"
+            "CREATE EDGE TYPE HAS_MESSAGE IF NOT EXISTS"
         ]
         
         for cmd in commands:
-            self.execute_command(cmd, language="sqlscript")
+            # sqlscript can be picky for single DDLs, use sql
+            self.execute_command(cmd, language="sql")
 
     def execute_command(self, command: str, language: str = "sql") -> Dict:
         url = f"{self.base_url}/command/{self.db_name}"
         payload = {"command": command, "language": language}
         response = requests.post(url, json=payload, auth=self.auth, headers=self.headers)
+        
         if response.status_code != 200:
-            print(f"Command failed: {command} -> {response.text}")
+            error_text = response.text
+            # Benign errors to suppress during schema init
+            if "already exists" in error_text:
+                return {}
+            
+            print(f"Command failed ({language}): {command} -> {error_text}")
             return {}
         return response.json()
 
@@ -106,13 +97,13 @@ class ArcadeDBClient:
             
         response = requests.post(url, json=payload, auth=self.auth, headers=self.headers)
         if response.status_code != 200:
-             print(f"Query failed: {query} -> {response.text}")
+             print(f"Query failed ({url}): {query} -> {response.text}")
              return []
         return response.json().get("result", [])
 
     def document_exists(self, filename: str) -> bool:
         """Check if a document with the given filename already exists."""
-        query = "SELECT FROM Document WHERE filename = ?"
+        query = "SELECT FROM SourceFile WHERE filename = ?"
         # params keys for SQL usually parameter placeholders like ? or :param.
         # ArcadeDB HTTP API with 'sql' language and 'params' map usually uses ? or positional 0,1..
         # Let's stick to the map using "0" as key for first ?
@@ -121,7 +112,7 @@ class ArcadeDBClient:
 
     def insert_document(self, filename: str, doc_type: str) -> str:
         """Insert document metadata and return RID."""
-        cmd = "INSERT INTO Document SET filename = ?, type = ?, upload_date = sysdate()"
+        cmd = "INSERT INTO SourceFile SET filename = ?, type = ?, upload_date = sysdate()"
         # ArcadeDB SQL params usually passed in parameters or embedded. 
         # For simplicity, we'll embed safely or use params if API supports it standardly.
         # The HTTP API supports 'params' map.
@@ -139,6 +130,8 @@ class ArcadeDBClient:
             res = response.json().get("result", [])
             if res:
                 return res[0].get("@rid")
+        else:
+            print(f"Insert document failed: {response.text}")
         return ""
 
     def insert_chunk(self, doc_rid: str, content: str, page_num: int, embedding: List[float]):
@@ -147,6 +140,7 @@ class ArcadeDBClient:
         cmd_chunk = "INSERT INTO Chunk SET content = ?, page_number = ?, embedding = ?"
         payload_chunk = {
             "command": cmd_chunk,
+            "language": "sql",
             "params": {
                 "0": content,
                 "1": page_num,
@@ -160,6 +154,8 @@ class ArcadeDBClient:
             r = res.json().get("result", [])
             if r:
                 chunk_rid = r[0].get("@rid")
+        else:
+            print(f"Insert chunk failed: {res.text}")
         
         # 2. Link
         if chunk_rid and doc_rid:
@@ -167,31 +163,55 @@ class ArcadeDBClient:
             self.execute_command(cmd_link)
             
     def similarity_search(self, embedding: List[float], limit: int = 5) -> List[Dict]:
-        """Search similar chunks."""
-        # Syntax: SELECT FROM Chunk WHERE embedding VECTOR_NEIGHBORS [?, ?]
-        # Or with index: SELECT FROM Chunk WHERE embedding MATCHES_VECTOR [?, ?] (depends on exact ArcadeDB/Lucene syntax)
-        # Standard ArcadeDB 24.x Lucene syntax: 
-        # v24.10: SELECT FROM Chunk WHERE vector_knn(embedding, ?) < ? (Maybe?)
-        # Let's use the explicit index syntax if possible, or the function.
-        # Assuming: SELECT FROM Chunk ORDER BY vector_distance(embedding, ?) ASC LIMIT ?
-        # Note: vector_distance might be 'vec_distance' or similar. 
-        # Let's try the dedicated vector search syntax: 
-        # SELECT FROM index:Chunk_embedding WHERE key BETWEEN [...] -- this is for range
-        # Official docs say: `SELECT vector_distance(embedding, ?) as distance, * FROM Chunk ORDER BY distance ASC LIMIT ?` is standard pattern.
+        """Search similar chunks using client-side Cosine Similarity."""
+        # 1. Fetch all chunks (ID, content, page, embedding)
+        # Check cache or fetch fresh? For now fetch fresh to be safe.
+        query = "SELECT @rid, content, page_number, embedding FROM Chunk"
+        res = self.query(query)
         
-        query = "SELECT content, page_number, vector_distance(embedding, ?) as distance FROM Chunk ORDER BY distance ASC LIMIT ?"
-        payload = {
-            "command": query,
-            "params": {
-                "0": embedding,
-                "1": limit
-            }
-        }
-        url = f"{self.base_url}/query/{self.db_name}"
-        response = requests.post(url, json=payload, auth=self.auth, headers=self.headers)
-        if response.status_code == 200:
-            return response.json().get("result", [])
-        return []
+        if not res:
+            return []
+
+        import numpy as np
+        
+        # 2. Compute Cosine Similarity
+        # Sim(A, B) = dot(A, B) / (norm(A) * norm(B))
+        # Assuming embeddings are already normalized by the provider? Not safe to assume.
+        
+        query_vec = np.array(embedding)
+        norm_q = np.linalg.norm(query_vec)
+        if norm_q == 0:
+            return []
+            
+        scored_chunks = []
+        for r in res:
+            vec = r.get("embedding")
+            if not vec:
+                continue
+            
+            # Ensure vec is list of floats
+            if isinstance(vec, str):
+                continue # Should not happen if LIST type used, but safety first
+                
+            doc_vec = np.array(vec)
+            norm_d = np.linalg.norm(doc_vec)
+            
+            if norm_d == 0:
+                score = 0
+            else:
+                score = np.dot(query_vec, doc_vec) / (norm_q * norm_d)
+            
+            r["distance"] = 1 - score # Convert similarity to distance-like (lower is better? or just use score)
+            # Standard vector search often returns distance.
+            # If we want Similarity (Higher is better), we should sort DESC.
+            # If retrieval expects distance (Lower is better), we do 1 - score.
+            # Let's use score and sort DESC.
+            
+            scored_chunks.append({"content": r.get("content"), "page_number": r.get("page_number"), "score": score})
+            
+        # 3. Sort and Limit
+        scored_chunks.sort(key=lambda x: x["score"], reverse=True)
+        return scored_chunks[:limit]
 
     def create_conversation(self) -> str:
         cmd = "INSERT INTO Conversation SET started_at = sysdate()"

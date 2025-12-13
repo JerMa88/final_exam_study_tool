@@ -1,5 +1,7 @@
 from typing import Iterator, Optional
+import os
 from langchain_google_vertexai import ChatVertexAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.chat_models import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
@@ -25,7 +27,13 @@ class RAGPipeline:
             
             return ChatOllama(model=clean_name)
         else:
-            return ChatVertexAI(model_name=model_name)
+            # Check for API Key to determine which Google client to use
+            if os.getenv("GOOGLE_API_KEY"):
+                # Use GenAI (AI Studio) client
+                return ChatGoogleGenerativeAI(model=model_name)
+            else:
+                # Default to Vertex AI (requires gcloud auth)
+                return ChatVertexAI(model_name=model_name)
 
     def chat_stream(self, query: str, conversation_id: Optional[str] = None, model_name: str = "models/gemini-2.0-flash", llm_provider: str = "vertex") -> Iterator[str]:
         import json
@@ -41,10 +49,16 @@ class RAGPipeline:
         self.db.add_message(conversation_id, "user", query)
 
         # 3. Setup Chain
-        template = """Answer the question based only on the following context:
+        template = """Answer the question regarding the study materials.
+        
+        Context:
         {context}
         
         Question: {question}
+        
+        Instructions: 
+        1. Use the provided Context to answer the Question.
+        2. If the answer is not found in the Context, you may answer from your own general knowledge, but explicitly state: "Note: This answer is based on general knowledge as it was not found in the provided documents."
         
         Response:"""
         prompt = ChatPromptTemplate.from_template(template)

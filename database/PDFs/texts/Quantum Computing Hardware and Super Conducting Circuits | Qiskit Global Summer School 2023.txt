@@ -1,0 +1,1146 @@
+0:00
+foreign [Music]
+0:07
+Global summer school today's lesson is going to be on Quantum Computing hardware and superconducting circuits
+0:14
+so to outline what we are going to cover today we are going to talk about what a
+0:19
+real qubit is for probably the first time in the two-week series of lectures
+0:25
+now then we're going to talk about atoms and artificial atoms also known as
+0:30
+superconducting qubits and we're going to talk about why they are sometimes called artificial atoms we will then go
+0:36
+into the divincenzo criteria which is the criteria that was set forth that we have to have in order to say we have
+0:43
+built a universal quantum computer we are then going to talk a little bit about classical circuits so that we can
+0:49
+compare and contrast their components to the quantum circuits that we're going to be building and the Josephson Junction
+0:55
+as the most crucial element of those circuits and then lastly we're going to talk about how to control and measure a
+1:02
+transmon qubit which is the type of qubit that IBM builds all of its Quantum Hardware from
+1:08
+so the motivation of today's lecture is basically to understand what is in the
+1:14
+golden chandelier this is the cryostat the dilution refrigerator that houses basically all of the cryogenic
+1:21
+components all the quantum components the cables the amplifiers everything that we actually need in order to read
+1:26
+out the quantum computer at cryogenic temperatures not including the room temperature controls and the quantum
+1:32
+processor itself like I said this is a cryogenic machine it's made up of many different stages so
+1:39
+you can see the different stages the different levels where all of the wires are connecting each each plate each
+1:45
+different level to one another and it's gradually getting colder at the top it starts at room temperature and then at
+1:50
+the bottom it hits temperatures of about 15 millikelvin which is colder than
+1:56
+outer space it's insanely cold and we do this through a mixture of a combination of helium-3 and helium-4
+2:03
+and like I said all this Quantum stuff is kept at insanely cold temperatures all the way at the bottom here in the
+2:09
+canister which you can't see in this picture because it's all canned up for experimentation purposes and we're going
+2:14
+to go into what's in it and how to build up these devices so now let's talk about the divincenzo
+2:21
+criteria as I mentioned this is this was coming earlier so the divincenzo criteria is basically
+2:27
+the accepted criteria that was set forth by David divincenzo and it's basically a checklist so in order to say you have
+2:34
+built a universal quantum computer you need to have all of the following you need to have a well-behaved Quantum
+2:41
+system here I'm showing a Quantum system as this cartoonish block sphere which you may or may not be familiar with
+2:47
+people have probably mentioned it in previous lectures but the blocks here basically is a it's a 3D sphere where
+2:56
+the excited state and the ground state of the qubit are at the poles of the
+3:01
+sphere and the maximally entangled States rest along the Equator of the sphere but the qubit can be in any state
+3:08
+along the surface of the sphere as well we need to be able to initialize our
+3:14
+qubits into well-known States basically we need to be able to put them in the ground state or put them in the excited
+3:21
+state or any other well-known defined state in order to run specific algorithms we also need to have
+3:27
+relatively long coherence times so Quantum systems don't like to stay in
+3:33
+Quantum States forever in fact they only stay in these states for a very precious short amount of time generally and we
+3:40
+need to make sure that before they spontaneously decohere or lose their Quantum State and you know devolve back
+3:47
+into the ground state that we can run our algorithms and run our Quantum circuits so these circuits have to be
+3:53
+done in a short amount of time compared to the coherence time the stability of the qubit
+3:58
+we also need a universal set of quantum Gates and these are operations that you
+4:04
+can apply to your qubit in this lecture we're going to be talking how to do that through a series of microwave pulses and
+4:11
+these need to be able to be built up in order to create any sort of operation of this Vector pointing along the block
+4:18
+sphere that you might want to do and lastly we also need qubit specific
+4:23
+measurement capability and what that means is we need to be able to individually measure every single qubit
+4:29
+in our Quantum processor without interfering with the other qubits so once you have all of these criteria you
+4:36
+can say yes we have achieved the divincenzo checklist and we have built a universal quantum computer
+4:43
+but what is a real qubit anyway you probably have not seen one before
+4:49
+and we're going to continue to talk a little bit more about this cartoonish picture of this block sphere which I'm
+4:54
+sure you're familiar of at this point but this is really a toy model that's describing a qubit a qubit is not a
+5:01
+sphere it doesn't actually look like this funny ball thing at all but it's an incredibly useful model because you can
+5:07
+see how the vector that points from the origin of the sphere to anywhere on the surface of the sphere
+5:13
+can keep track of the energy state of the qubit so one thing you'll notice here is that I've plotted the energy
+5:19
+levels of the qubit in different colors here on the right and the qubit only generally represents the ground state
+5:26
+and the excited state and it pretty much ignores any higher energy levels that
+5:32
+actually do exist in real life systems which is why this is just a model it's just a cartoon image this is not what an
+5:39
+actual qubit looks like and it's not how an actual qubit even really functions so here are some examples of what real
+5:46
+qubits look like this is an ion trap a superconducting processor this is an NV Center qubit and
+5:54
+these are silicon dot qubits you can make qubits out of many different actual
+5:59
+physical architectures you basically just need what divincenzo said a stable two-level system but we're going to be
+6:07
+focusing today on the superconducting qubit architecture because this is the one that IBM uses but I just wanted to
+6:13
+make sure that everybody knows there are actually many different types so toy model on the left that's not reality
+6:20
+it's just a description that we use to visualize what's going on real life on the right that's what these things
+6:26
+actually look like we're going to take a closer look later on so like I said there are many different
+6:31
+flavors of qubits right and these are some of the ones that I showed on the on the previous slide but like I said this
+6:38
+lecture is only going to focus on the superconducting loops the superconducting circuits for now but
+6:43
+just as a fun fact kiss kit can actually be used for other companies Hardware as well and different types of
+6:49
+architectures all right so unfortunately the whole
+6:54
+history of quantum mechanics and quantum physics is a little bit out of scope for this lesson but I think part of the
+7:00
+relevant story here is the discovery of quantized energy Spectra so this was
+7:06
+first discovered um from this sort of toy experiment that you can see here so for instance if we
+7:13
+have this excited hydrogen sample and we direct the light that comes from the
+7:18
+hydrogen sample through a slit and then through a prism what comes out on the
+7:23
+other side of the prism when you look at it through a detector is only a few specific colors of different wavelengths
+7:31
+and this is sort of curious because normally when you shine light through a prism you sort of famously get a rainbow but here
+7:38
+we only get a few specific colors and it turns out when people looked at
+7:44
+other elements using the same sort of setup they got sort of similar results helium had a few more lines neon had a
+7:51
+few more lines on top of that but it was always the same exact colors and the same exact lines and this is because if
+7:59
+you were to look at the emission of photons coming from these atoms they
+8:05
+come from very specific quantized energy levels within the system so a photon
+8:10
+that would fall and be de-excited from the first excited state to the ground state would have a very specific energy
+8:17
+associated with it the difference between the energy at zero and the energy at one which relates to a very
+8:23
+specific frequency a very specific color and similarly two three four as you go
+8:29
+up further and further it all works exactly the same and all of these levels are quantized so there's no level that
+8:35
+it can exist at in between zero and one or in between one and two and that's why all the wavelengths are all weighs the
+8:42
+same color and this led Bohr and his colleagues to say you know energy is
+8:48
+quantized and that's how we started to develop quantum mechanics as a useful
+8:53
+Theory now we could go ahead and just use one
+8:59
+of these atoms as a cubit because if you look at the potential energy landscape of an atom it goes about 1 over R where
+9:07
+R is the radius of the electron from the nucleus from the center of the atom
+9:12
+and of course these energy levels are quantized so you could just use those bottom two rungs here that you see in
+9:18
+blue and red that I've labeled as the qubit and that's because this energy potential is what we call an harmonic it
+9:25
+means all of the energy levels are not equally spaced so for instance if a laser is shown on the atom of interest
+9:34
+and we had an electron in the ground state and the laser had an energy that
+9:39
+was at that difference of the spacing between zero and one it would drive a transition of that Atom from the ground
+9:46
+state to the first excited state so as you can see in this picture only a laser with that energy difference would affect
+9:53
+our qubit and that's why you can use these these atoms and these potentials
+9:59
+as qubits because even if they have higher order energies they're not at the same spacing so you can pretty much
+10:06
+ignore them for you know first order calculations
+10:12
+so if atoms are nature's perfect qubit why are we making circuits at all well
+10:17
+we make circuits that essentially mimic atoms like we said we call them pseudo atoms or artificial atoms and we do this
+10:24
+because we would like to be able to engineer all components of that atom we want to make everything a knob we want
+10:30
+to make that potential a knob we want to make that spacing a knob we want to make the spacing to the other higher order energy states which we don't want the
+10:37
+qubit to accidentally leak into something that we can control and in addition we want to be able to
+10:43
+Leverage The semiconductor fabrication industry which is already a huge industry it's what develops all of the
+10:50
+chips that we use in our normal computers on a day-to-day basis so the infrastructure in order to create
+10:56
+superconducting circuits is already there so essentially this gives us much more control than if we were to just you
+11:03
+know steal some atoms from nature
+11:08
+all right now we are going to move on to classical electrical circuit components so this is just a little bit of
+11:15
+background information here and I'm sorry to advance students who might find this a little repetitive or a little introductory but it's always better to
+11:22
+be refreshed on a topic than to be confused later on I think and so this will bring us all back to the same page
+11:28
+so the toolkit that you have for creating classical electrical circuits is first
+11:33
+the resistor which is symbolized by this Jagged squiggly line here and this
+11:39
+implements electrical resistance in your circuit so basically you can think of it as like if you had a pipe with flowing
+11:46
+water resistance is what it sounds like if you introduce some sort of blockage or sludge into the pipe and it keeps the
+11:52
+water from SL from going through the pipe really fast it slows it down that's what resistance does
+11:58
+a capacitor symbolized by these two parallel lines here stores energy in the
+12:04
+electric field and the inductor stores energy in a magnetic field and that's
+12:10
+symbolized by these loopy curves here so all three of these together represent the components that we have to build up
+12:17
+our circuits with capacitors store charge and inductors will store this energy in a magnetic
+12:23
+field and together they all work with one another and can all be described by kirchhoff's laws which are pretty simple
+12:31
+to understand if you're interested I I encourage you to just Wikipedia it very quickly but it basically just described
+12:37
+how all of the energy and the circuits are always conserved and similarly flux and charge are going
+12:43
+to be continuous variables in these circuits as well
+12:49
+but what is flux in charge well flux is defined as the rate of flow of a property per unit area which has
+12:56
+the dimensions of quantity over time over area and so basically this is equal
+13:02
+to the magnetic field times the cross section of that area where the magnetic
+13:07
+field is symbolized by B here a is the area and then Theta would be the perpendicular Vector from that area to
+13:14
+the magnetic field charge is the basic physical property of
+13:21
+matter that causes it to experience a force when kept in an electric or a magnetic field an electric charge is
+13:28
+associated with an electric field and the moving electric charge can generate a magnetic field and that's symbolized
+13:35
+here by the integral over time of that charge
+13:41
+so if you combine both of these properties together what you would see would yield an LC circuit an inductor in
+13:48
+a capacitive circuit and this turns out to be a very important circuit for us going forward
+13:53
+and the hamiltonian which is the total energy contributions from the circuit is
+13:59
+equal to this where you can see that the charge Q is squared and plays a large component and the flux does as well
+14:07
+and we can also write down the characteristic frequency of this circuit which is equal to 1 over 2 Pi root LC
+14:18
+now we're going to look at linear circuits first because I think it's really most simple to build off of a
+14:23
+circuit that we're most familiar with so this is a circuit that I made in graduate school that I Nano fabricated
+14:29
+here it's actually almost microscopic you almost can't really see it with your naked eye but this is the most simple
+14:37
+circuit that I can think of to start with it's a resonator so I want you to see in red here I've highlighted these
+14:43
+interdigitated finger capacitors that are sort of interleaved with one another but this is just a good way of building
+14:50
+up a lot of capacitance in a small amount of area so this serves as our capacitor and our schematic over here on
+14:57
+the right and then these loopy things here that are attached to it represent the inductor
+15:03
+so there's no resistance in this resonator it's just capacitance and the inductance and if you look at the
+15:09
+hamiltonian which is the same as on the previous slide you can see we have the charge we have the flux but I want you
+15:15
+to compare this to a hamiltonian that you may or may not be more familiar with which is the hamiltonian of a classical
+15:22
+harmonic oscillator and you can really see here that it's almost the exact same
+15:27
+equation and if you look at the kinetic energy component it mimics the exact
+15:33
+same kinetic energy component of this classical hamiltonian and similarly the potential energy component from the flux
+15:40
+mimics the potential energy of the component of the hamiltonian on the
+15:46
+bottom so it's really the exact same energy and this leads to some pretty
+15:51
+interesting math so if you were to look at the potential
+15:58
+well that we created here it's the exact same as a harmonic oscillator
+16:03
+so if you want to make this oscillator and this hamiltonian now Quantum fun
+16:08
+fact all you have to do is put a little hat on all your variables in theory because we're physicists and we're lazy
+16:14
+and so that's all we know to do and now you're working with a Quantum harmonic
+16:19
+oscillator or a Quantum LC circuit and if we we already know these terms here but one one thing I wanted to point out
+16:25
+is that you can rewrite this hamiltonian actually in terms of something called the number operator and the number
+16:32
+operator symbolizes what energy State the hamiltonian is in
+16:37
+um if you're not familiar with that if you haven't taken quantum mechanics yet no worries it doesn't really matter you just can focus on the visual aspect of
+16:44
+it for now so for an oscillator you can see we have this potential well with all these
+16:49
+different energy levels where every rung is just equally spaced from one another like a ladder right and
+16:56
+the energy separation in between every single one of these rungs is the same it's equal to H bar Omega naught where
+17:03
+Omega naught is that classical resonance from our circuit and the N here the n
+17:09
+hat would represent 0 1 2 3 as we climb up the ladder so you can see that the spacing is really just H bar Omega over
+17:17
+2 for every single one of these because it's a linear separation but this doesn't really make for a good
+17:24
+qubit because if you remember from you know a few slides ago if we wanted to
+17:29
+use a laser or an electric pulse or a microwave pulse to isolate two lungs of
+17:35
+this ladder we couldn't do that because the energy separation between every single rung and the next rung is exactly
+17:41
+the same so we need to introduce a unique way to
+17:47
+make this a qubit and now I'm going to do um a little bit of a step sideways here
+17:52
+and go on a bit of a tangent on superconductivity since this is so crucial for our superconducting qubits
+17:58
+and I don't think it's really covered very much or particularly well at all in undergraduate classes
+18:04
+but the basic idea behind superconductivity is that at a specific temperature for some metals only their
+18:11
+intrinsic resistance vanishes so if you look at this graph on the right here you can see that the resistance for a
+18:18
+non-superconducting metal as the temperature is really really lowered to almost absolute zero it sort of bottoms
+18:25
+out but it always has some intrinsic resistance to it a superconductor on the other hand at some temperature
+18:32
+completely bottoms out and the resistance goes to absolute zero so even if you were to design an optimal
+18:40
+LC circuit for instance out of a normal metal it would actually still have some native resistance to it even if it's
+18:46
+really really small so a lot of times when people draw these LC circuits they introduce another little resonator in
+18:53
+parallel with the circuit even if they don't actually put a resistor in the circuit it's just intrinsic to the
+18:59
+properties of that metal but this is bad because resistors create dissipation and
+19:05
+heat energy that is lost we have to get rid of this and the way that we do that is not by working with normal Metals but
+19:12
+only with superconductors in our circuit if you're interested in the math and physics theory behind what I'm about to
+19:19
+say I again refer you to the Wikipedia page on superconductivity or BCS Theory which I'm going to cite at the end of
+19:25
+this lecture but all you really need to know for now is that at very cold temperatures the electrons sort of pair
+19:32
+up because of an attractive interaction due to the atomic lattice and the
+19:37
+spacing in the metal and when we call we call these electron pairs when they when they pair up and they get stuck to one
+19:43
+another Cooper pairs and another important effect to know when this happens is that they they uh
+19:52
+display the meissner effect and the meissner effect says and you can see visually here that no magnetic field can
+19:59
+penetrate superconductors so in a normal metal or at a temperature above the critical temperature where the
+20:04
+resistance goes to zero magnetic fields can simply pass through a superconductor or a metal but it totally repels it when
+20:13
+the temperature is below that critical temperature and magnetic fields cannot penetrate it at all
+20:18
+and this leads to really cool effects like you can see here something that we would call magnetic levitation just as
+20:24
+sort of an aside all right so now we're going to introduce probably the the bread and
+20:31
+butter I would say of superconducting circuits which is the Josephson Junction so the Joseph injunction pictured here
+20:38
+you know in a cartoon version on the left is a layer in yellow of superconductor and then there's an
+20:44
+insulating barrier and then there's another layer of superconductor so it's a superconducting sandwich it looks a
+20:49
+little bit like a parallel plate capacitor and in a circuit diagram you would symbolize it with a box with a
+20:55
+cross through it and the important equations to know from a Josephus injunction is the uh current
+21:02
+relationship which says that the current is equal to the critical current times sine Phi where Phi is the phase across
+21:09
+that insulating barrier and then the energy is equal to the Josephson energy and the cosine of that phase
+21:16
+and then you can see here on the right a couple examples of pictures that I took in Graduate School of actual Joseph's
+21:22
+injunctions so you can see what they would look like under a really powerful microscope and you can also see that
+21:28
+they come in many different shapes and sizes so the first at the top you can see is a
+21:33
+transmon cubit so you can sort of see that like big flat piece on the top and then that tiny little finger that's
+21:40
+resting on top of it and you can't see it but in between there there is some insulation and only that overlapping
+21:46
+region is where the josis injunction is and similarly I've highlighted the
+21:52
+overlapping region and you're looking you know top down so you can't see the cross section of an amplifier Joseph's
+21:58
+injunction this is a cryogenic amplifier we're going to talk a little bit more about those later but as you can see in the first one the
+22:04
+width is only about you know 90 to 100 nanometers but we can make them much larger in general so again this is one
+22:10
+of the knobs that we have to turn and one of the benefits of working with pseudo atoms is we can control the size
+22:17
+of the Josephson Junction which really affects all of the properties of the superconducting circuit
+22:24
+so now if we were to look at a cross section of what a Josephson Junction looks like you can see that here in black and white you can really see the
+22:31
+ordered lattice of here they're using aluminum as their superconductor and then in the middle aluminum oxide was
+22:38
+allowed to sort of grow naturally aluminum oxide grows very quickly on top of aluminum and it becomes sort of
+22:43
+scattered and disordered and messy and then on the other side it again becomes a lattice and this is what a Joseph
+22:48
+injunction looks like on the top here I drew a little bit of math for you the superconducting order parameter is also
+22:55
+sort of known as the wave function which represents the Cooper pairs in the metal and the Cooper pairs actually tunnel
+23:02
+across the insulating barrier to the other side and this non-linear this
+23:07
+non-linearity is what's responsible for all of the really interesting properties of a superconducting circuit with
+23:13
+Josephson Junctions linear properties only lead to linear results like the
+23:19
+latter in terms of the potential energy of the harmonic oscillator and that type of linear system is boring we can't use
+23:26
+it so non-linearity is really the the magic and the key in order to do anything interesting in in physics
+23:34
+on the right here I'm showing you a sketch of a current voltage relationship from a superconducting junction
+23:41
+the Cooper pair tunneling current is seen where the voltage goes to zero and
+23:46
+then over at the sides you can see it introduces some resistance again as a
+23:51
+function of the uh that Delta there which is an energy gap in solid state
+23:57
+physics this energy gap is an energy range where no electron States exist and that's essentially where the the density
+24:03
+of States would vanish this is known as the ambigoa car barakov relationship and
+24:09
+it's really important because it allows us to calculate things like the critical current in terms of just measuring the
+24:15
+resistance of that metal at room temperature because it would be you know really really hard to measure it once it
+24:20
+was already in the bottom of the fridge and it becomes insanely cold all right so now a little bit of math
+24:27
+we already talked about the hamiltonian of a linear LC circuit but now you'll
+24:34
+recall me saying that linear relationships are boring and we can't really do anything with them so we need to get rid of that linear term which is
+24:40
+why I cross it off from the inductor and replace it with the term for the Josephson energy that I showed you on
+24:47
+the previous slide so if we get rid of that term because we're no longer using a linear inductance we are now using a
+24:54
+non-linear inductance we have this description here and we need to play with it a little bit
+25:00
+so what we're going to do is a tailor expansion of this cosine term and a Taylor
+25:07
+expansion is basically an abbreviation of a function that goes on forever but you can cut it off after you know a few
+25:14
+terms in order to have a mathematical description that you can solve of course
+25:19
+it's not quite as mathematically accurate as using the cosine but it actually allows
+25:24
+us to do something with the function so we do this Taylor expansion from this cosine term here and then we start
+25:30
+grouping terms together that we recognize and so you can make a few
+25:36
+substitutions here plug in L for this Phi naught over two and then you can see
+25:41
+here what we actually end up getting in the end is a harmonic oscillator with a
+25:48
+higher order perturbation term on top of it and we can write this if you're interested in terms of ladder operators
+25:55
+they're known as a and a dagger and this is the operator which essentially is responsible for changing the circuit
+26:03
+from one energy level to the other and then back again so you can see here if we again make some more proper
+26:09
+substitutions we can write the hamiltonian in terms of H bar Omega a dagger a plus a little bit of other
+26:16
+extra terms on top of it so what this essentially means and what I want you to picture visually is a typical harmonic
+26:22
+oscillator but with a little bit of extra non-linear stuff on top of it and
+26:27
+this is the approximate hamiltonian fratiosis injunction and for more details on this derivation if you're interested um I encourage you to see
+26:34
+glaucoma's lecture from the first Global summer school
+26:41
+so like I said what you're going to picture now is almost a harmonic oscillator but now what you can see is
+26:48
+that we've actually by introducing a non-linear term stretched it so now you
+26:53
+can see that these arrows representing the rungs and the energy spacing of the ladder are no longer equally spaced they
+27:00
+are no longer equidistant and what we actually do in reality is we shunt this
+27:05
+LC circuit with even more capacitance and this allows us to control how big
+27:12
+that spacing is and the capacitor actually shrinks the anharmonicity which
+27:17
+is that separation and makes it insensitive to charge noise so charge noise are these fluctuating
+27:24
+charges in the in the metal and this results in a fluctuating electric field and that's bad so we need to make it
+27:30
+insensitive to that type of noise and then you can see here finally if we
+27:35
+were to drive a transition at that purple energy difference that purple Arrow there between the G the ground and
+27:42
+the excited state you would be able to have a qubit and you wouldn't excite transitions at least theoretically to
+27:49
+any other energy State because those energy differences are separated by at least 200 megahertz
+27:57
+so now let's take a look at an IBM transmon Cubit specifically a transmon
+28:02
+is a type of superconducting uh Cuban all right so if you zoom in here a
+28:08
+little bit you can see that these parallel plate capacitors are that big extra capacitance that I talked about
+28:14
+which can control the nharmonicity and it's really hard to see here you have to zoom in even more
+28:20
+but finally you can see the Joseph's injunction and you can see here the two little fingers of the metals overlapping
+28:27
+and that is exactly where the junction is and you can't see this with a naked eye at all you have to use an sem microscope
+28:33
+one thing we didn't talk about yet in that you'll see here in the diagram is that all of these qubits are coupled to
+28:40
+these squiggly lines on the top and bottom and those are superconducting microwave resonators and we're going to
+28:46
+talk about those a little bit later on but basically these are responsible for the readout of the qubit and multiple
+28:53
+qubit Quantum buses and also they can be used to create filters at the keep it frequency as well
+29:01
+so now let's just take a little a little step back um before our break so if we were to look at the dilution or
+29:07
+fridge again the qubits themselves and the Josephson Junctions are probably the most important concept and component of
+29:14
+the hardware course but there's a whole bunch of other stuff in the fridge that we haven't talked about yet at all right and you can see that in in this picture
+29:21
+on the golden Chandelier and you can see underneath all these vacuum Shields the input and the output cables which take
+29:27
+the signal up from the qubits and then back to the qubits and throw all those different temperature levels there's
+29:33
+really a whole lot going on here within the cans so we're going to talk a little bit more about that after our break
+29:46
+[Music]
+30:08
+[Music]
+30:21
+foreign
+30:44
+[Music]
+30:53
+thank you
+31:44
+thank you
+32:08
+[Music]
+32:54
+thank you
+33:20
+[Music] about
+33:27
+it
+33:57
+oh sorry
+34:36
+thank you all right so now we're going to be
+34:41
+talking a little bit about something called non-demolition measurement and I'm going
+34:46
+to be talking about a classical example of non-demolution measurement first because I think it's a little bit easier
+34:52
+to understand before we move on to a Quantum example of non-demolation measurement
+34:57
+so let's talk about what that is um one of the fun challenges about Quantum
+35:02
+measurement is that Quantum stuff needs to be isolated from the environment in order to do Quantum things observation
+35:09
+or leaks of information into the environment prevent that but we have to be able to extract some information of
+35:16
+course right if we can't interact with it at all then what good is it so we
+35:21
+introduced this topic of non-demolition which is sort of exactly what it sounds like it means the act of extracting the
+35:28
+information changes and in some cases destroys the state that you're trying to observe
+35:34
+so an example of this comes from the very wise Howard Wiseman and you want to
+35:39
+picture a canister of hydrogen gas so you have this big canister of hydrogen tap gas and my task to you is to decide
+35:47
+is there any way to know if there is gas left in the container or if it's empty
+35:52
+and you can't just open it and look right because hydrogen is invisible and it would just you know disperse into the
+35:58
+air so instead and this is a very bad idea you know don't do this but you take
+36:03
+a match and you hold it near the spout of the handle let me open it it could combust and explode into a fiery mess if
+36:12
+that happens then you know there was hydrogen in the can because hydrogen is very flammable and this is obviously an
+36:19
+example of demolition measurement because you blow it up and you destroyed it um but this is again a classical example
+36:25
+not quantum so this was obviously not an intelligent way to do this measurement
+36:31
+so why don't we all you know take a second here and try to think about how we might do this in a more intelligent
+36:37
+way in a way that would not destroy the canister or light it on fire and as a hint this is very similar to an
+36:44
+experiment that I talked about you know way back on like the second or third slide
+36:50
+so if instead we take our canister and we shine a laser and direct a laser
+36:55
+across this sort of spout at the top and then look at the absorption lines if
+37:01
+we're able to direct that into a detector and you could see if the hydrogen is still in the canister the
+37:08
+direct lines of absorption where those wavelengths would be absorbed from the laser in the hydrogen and then you would
+37:15
+know without destroying it that there is in fact hydrogen inside the container still so this is obviously a much more
+37:21
+intelligent way of measuring the experiment
+37:26
+all right so now let's look at a example of quantum Devolution versus
+37:32
+non-demolation let's say we have our superconducting circuit our qubit here
+37:37
+drawn in this schematic format highlighted in blue and it's hooked up to a transmission line so that would be
+37:42
+like those input cables that I showed you before the break echoed down into the fridge they have
+37:48
+those little loops on them and this would be direct observation of the Cuban and that's bad because even if we are
+37:55
+not trying to measure the qubit light and signals can still leak into the qubit and from the qubit into the
+38:00
+transmission line and this can ruin the quantum state of the qubit and all this
+38:06
+information can just leave at any time so that's bad so this is not going to work for us
+38:12
+instead let's couple the qubit to a cavity resonator and this is actually
+38:19
+much more suitable for qnd or Quantum non-demolation measurement because and
+38:25
+this is important the frequencies of the qubit and the cavity resonator are very different one another so they don't just
+38:30
+intrinsically talk to one another even though you can see here that they're coupled to one another through that
+38:37
+capacitance those parallel plate capacitors in the schematic format that I drew on the top so they don't just
+38:43
+talk to one another and leak information to one another because they're not the same frequency they're not the right frequency so if information goes from
+38:50
+the transmission line into the cavity we can extract information from the cavity and it goes back to us but we don't
+38:56
+directly interfere with the Cuban so this is qnd
+39:03
+in order to perform measurement on the qubit we never interact with it directly instead we do something called Quantum
+39:10
+dispersive measurement and so we couple that cat like I showed you in a previous slide and like you saw when we actually
+39:16
+looked at the transmon chip to a 2d or a 3D cavity we're using 2D cavities here
+39:22
+but sometimes you can take the whole qubit and actually put it into like a physical cylinder a physical capacity a
+39:29
+resonator but it works the exact same the the math is the same so what this actually looks like in
+39:35
+hamiltonian format is this here and you can see that in terms of the raising and lowering operators the qubit
+39:42
+isn't purple the cavity is in green the cavity is an N harmonic also sorry the
+39:47
+cavity is a harmonic oscillator the qubit is an N harmonic oscillator and then the last term would be their interaction term which is how they speak
+39:54
+to one another so in the dispersive regime like I said the Cuba and cavity are very far off in
+39:59
+frequency and what this actually means is that if we were to ask the resonator
+40:04
+if we were to send a pulse of microwave light down through those cables into the resonator we could measure the frequency
+40:11
+of the resonator and that frequency will actually shift a little bit down or a little bit up depending on what the
+40:18
+state of the qubit is so we never actually directly talk to the qubit we talk to the resonator and the
+40:24
+resonator's frequency is affected by the qubit and so you can see that either here in magnitude orange phase
+40:32
+here we're looking at a schematic of the readout amplitude in terms of I and Q and if you've never heard of those
+40:38
+before it's basically just components of a microwave signal or any signal really and it basically just means the
+40:43
+imaginary and the real component of that signal and so if you square them and add
+40:49
+them together the root of that would be equal to the magnitude of that amplitude and then similarly with the inverse
+40:56
+tangent of those components you can understand the phase of that signal as well and like I said the phase and the
+41:03
+magnitude will shift to the left or the right depending on if the qubit is excited or in the ground state
+41:09
+and what we actually see on our computer when we plot the inq component is a
+41:15
+little gaussian blob basically a little fuzzy Circle that appears on one side or
+41:21
+the other side depending on if that qubit is in G or E and the square root
+41:26
+of n here just basically means how many photons are in our measurement signal
+41:32
+and Phi is the phase that separates them so now let's examine how we actually
+41:39
+read out one of these qubits at room temperature because the qubit and the cavity system actually lives in the bottom of the dilution refrigerator
+41:45
+right and we saw that and it's very far removed from room temperature for us to be able to see or interact with it given
+41:51
+that we're at room temperature we're not at 15 millikelvin right we're not in a cryogenic vacuum container and those
+41:57
+solution refrigerators have four cans stacked on top of one another so you can't see or touch it or interact with
+42:05
+it whatsoever so what we actually do is we send a microwave a coherent microwave pulse
+42:12
+represented here by this gray blob and it's centered at inq now because it hasn't interacted with the key but it
+42:17
+hasn't shifted yet down into the fridge the fridge is marked here schematically by that um blue box and then it will
+42:25
+interact with the qubit it'll figure out through the resonator if it's in the G or the E State and then it will shift in
+42:32
+Phase a little bit when it leaves the the resonator and the dilution refrigerator and I've marked that here
+42:38
+in either a red or blue phase shift where the phase shift is described by that Theta here
+42:44
+however this isn't actually what you see at room temperature in the setup that I've drawn
+42:49
+for you here you don't actually see the G or the E blob move because that phase
+42:56
+shift is so small so in order to see the diagram that I plotted for you here we
+43:02
+actually have to introduce something called cryogenic amplifiers so now let's look at our first type of
+43:08
+amplifier which is called a hempt amplifier this is a high electron Mobility transistor amplifier and it
+43:14
+adds a lot of gain or amplification to the readout chain but as I've drawn for you here it also adds a great deal of
+43:20
+noise of thermal noise so if we just send one pulse down into the dilution
+43:25
+refrigerator we call this a single shot measurement you can see that it basically adds so much noise that yes it
+43:32
+makes the blobs bigger and you can see them sort of shift from one side to the other but there's so much overlapping
+43:38
+region due to that noise that if the qubit fell somewhere or if the measurement fell somewhere in between
+43:44
+those two gaussian bulbs you wouldn't really have any good way of knowing what state the qubit was in and this is bad
+43:50
+because in order to do error correction or run algorithms we need single shot measurement capability and that's not
+43:56
+always possible with just a hemmed amplifier you would need to do a lot of averaging in order to create good
+44:01
+separation between those two distributions so we add a very special component to the
+44:08
+readout chain something called a Quantum limited amplifier which is not actually normally
+44:14
+talked about in Hardware lectures much at all but I think it's very important and it's also what I did my PhD in and
+44:19
+this is my lecture so we can talk about it so basically you add this amplifier before the hempt you call it a
+44:26
+pre-amplifier so we amplify the signal a little bit and what is so fascinating
+44:32
+about these amplifiers is that they add only the minimum amount of allowable noise as dictated by quantum mechanics
+44:40
+to the readout so if you're familiar at all with the Heisenberg uncertainty
+44:45
+principle that says you can't make a precise measurement of of momentum and
+44:51
+of uh distance at the exact same time there's some element of noise in between
+44:58
+these measurements and it works exactly the same with the amplifier only the things you can't measure simultaneously
+45:04
+are the I and Q component of the measurement there are some uncertainty
+45:09
+that just has to be there and quantum mechanics tells us that on average that noise is equal to half a photon
+45:16
+but this is still good enough and this green outline here I'm using to represent those Quantum fluctuations
+45:22
+because when you amplify the signal even more still using that same hemped amplifier now you can see that we are
+45:29
+not overwhelmed with with the noise with the thermal noise it's not saturated yes
+45:34
+it has gone a little bit beyond that threshold and I have divided out the
+45:40
+gain here just so you can see the signal to noise ratio at the bottom but you can see that even if there is some
+45:46
+degradation of the SNR we still have two totally well separated distributions at
+45:51
+room temperature now and you can tell the state of the qubit from a single measurement so if that gray pulse goes
+45:58
+in and it comes out and it lands you know on the left here in that area of that blue Bob you know just from one
+46:04
+measurement that that qubit was in the ground state if it lands on the right side somewhere within that red blob you
+46:10
+know that the qubit was in the excited state and this allows us to do all sorts of really cool things like state
+46:16
+preparation measurement back end experiments error correction I could go on
+46:22
+and if you're interested in learning more about parametric amplifiers I suppose I would direct you to my thesis
+46:28
+um but this is just an example of what those amplifiers enable we spoke about how single shot measurement is really
+46:34
+important is a component of quantum Computing right and this graph is something called Quantum jumps which is
+46:41
+not a new ability as you can see it was done in 2011 here and I measured them a bunch in graduate school but it's still
+46:47
+it's really really cool and here you can see the qubit evolving in real time there's no averaging happening here and
+46:54
+it switches between the ground state and the excited state and this is all due to
+46:59
+the fact that the Josephson Junction is such an interesting and critical component of these circuits because all
+47:05
+the amplifiers all these cryogenic amplifiers are also just made out of those same components as well just
+47:12
+larger ones like I showed you in that picture and like I said if you want to know more um there's plenty of of sources
+47:19
+available to learn more about amplifiers so now let's take another step forward
+47:24
+and learn a little bit more of quantum Gates so let's start from a theoretical
+47:30
+perspective and hopefully you're already all familiar with poly matrices and maybe you already know as well that
+47:36
+combining these matrices can basically create any contr any rotation about the
+47:42
+block sphere that you would possibly want and so by combining them for instance here you can see
+47:47
+if we want to do an X rotation of angle Theta about the block sphere and have
+47:53
+our qubit Orient itself from the top to the equator or vice versa we would
+47:58
+simply be able to do that using um some amount some component of the of
+48:03
+the X pulse here a pi over 2 rotation and there's a lot of examples of
+48:08
+classical Gates as well so classical computers this is a truth table are are
+48:14
+built using classical Gates these are just some examples of the Anand and noriate and similarly quantum computers
+48:22
+use quantum Gates so you can see here that those truth tables look a little bit different you can see that the C
+48:30
+naught gate basically is uh it well it's used as an entangling gate when the
+48:36
+input is in a superposition state but if you just look at the input if both are
+48:41
+zero zero then the output is zero zero if the two input components of the qubits are zero one the output is zero
+48:48
+one and then it only changes if the uh if the second qubit component is in one
+48:56
+and the cease phase gate will introduce a phase if the second qubit is measured to be in one and the swap will introduce
+49:03
+a phase as well so you can make all sorts of different Gates but basically using a combination of the single qubit
+49:11
+rotations and these two cubic Gates here you can form a universal gate set which
+49:17
+means I can create any type of rotation and any type of interaction that I could possibly want to write any sort of
+49:24
+algorithm from some combination of these Gates that I've shown you
+49:29
+but how do we actually apply these Gates and how do we actually interact with the superconducting qubits so this schematic
+49:36
+here represents the inside of the fridge again where every single layer is getting colder towards the bottom where
+49:41
+the processor is and a microwave generator or more room temperature control Electronics create these
+49:47
+microwave pulses that are calibrated very precisely with frequency and amplitude and phase in
+49:54
+order to create those rotations about the block sphere and these pulses then travel down the transmission lines and
+50:02
+the line in the fridge you can see here with all those loops on it and on many different levels it goes through
+50:07
+attenuators and these attenuators reduce the power of the signal but don't disrupt the waveform or the shape of the
+50:14
+signal and it just prevents too much power from reaching the qubits and they don't like it when that happens
+50:19
+so in order to create these shaped pulses we also need something called an
+50:25
+arbitrary waveform generator which is also called an AWG and basically this
+50:30
+allows you to program a very specific shape of pulse and then when you combine that in something called a a mixer with
+50:38
+a microwave generator which will tell you the frequency and the amplitude then
+50:43
+you're allowed to create a very specific shape of pulse which has the exact shape
+50:49
+that you define with the AWG and then all of the other components such as the frequency that you combine with the
+50:56
+microwave generator and then you can send that to your qubit if you look at this hamiltonian above
+51:01
+here this is the term on the bottom here that we're generating by applying that oscillating voltage to the qubit and
+51:10
+then what we actually do is like you said it goes or like I said it goes through all those cables with those Loops down through the fridge and then
+51:17
+it goes into the bond Pat here which is on the bus resonator from the qubit
+51:22
+through the resonator and then it would interact with the resonator and we would be able to read out the qubit that way
+51:28
+um and just as a quick side note programming all of these pulses um it's not trivial it's not the hardest
+51:34
+thing but this is why it's so important to have a very strong coding background and when people talk about you know needing to have a strong CS background
+51:42
+and understand how to program you know in python or on other languages even if as an experimentalist like me this is
+51:48
+why this is what I'm talking about because you need to know how to program all of these room temperature control
+51:53
+Electronics in order to accurately send and read out these signals
+52:00
+excuse me um so one more really quick look at the single qubit control so if we were to Define our pulse with that really
+52:08
+specific and calibrated frequency and it would go into our resonator we could
+52:13
+basically create any type of single qubit rotation that we want and those rotations come for free if you just
+52:19
+shift the phase of the subsequent pulses so it doesn't matter what the global
+52:24
+phase that you defined is as long as the relative phase between the first pulse you send and those following pulses are
+52:31
+all exactly what you want them to be that's how we create single qubit rotations about different axes
+52:38
+and two cubic Gates most famously is probably the C naught gate and the way we enact the C naught gate is through
+52:45
+something called the cross resonance gate which is also known as a ZX operation and basically the way you do this is by
+52:53
+shooting one of those microwave pulses with that really specific shape like we defined on the previous slide to one
+52:59
+qubit at a coupled qubits frequency so if you have two qubits and they're
+53:05
+able to interact with one another through some sort of coupling capacitance in order to make them
+53:10
+entangled with one another you shoot the signal at one qubit at the other qubit's
+53:16
+frequency just I want to be clear on that and then you can see what would happen to the block sphere here is it
+53:21
+sort of rotates one way and the other way at the same time and that's how we would create entanglement here and you
+53:28
+can see that through a real picture here of the Target and the control qubit and
+53:34
+how they would interact with each other in the middle here through one of those loopy things again those Boston
+53:40
+resonators where the J represents the strength of the coupling in between those two different qubits
+53:47
+and we can scale up these exact same components and control and abilities
+53:54
+that I've been talking about to really really large processors at this point I mean I didn't show you any in-depth
+54:00
+pictures of like really big processors because I think it's easier to learn with just a handful of qubits like two to five qubits when you're looking at it
+54:06
+for the very first time but we've been able to build processors that are over 400 qubits large at this point just
+54:14
+using these exact same techniques and you can see here you know compared to the size of your hand how how small it
+54:21
+really is and that holds over 400 cubits and we have a plan this is the IBM
+54:27
+Quantum development roadmap going forward to build even larger processors using these transmon qubits using these
+54:34
+same development techniques that we have been using all along so here you can see last year we debuted the Osprey
+54:40
+processor that's what I was showing you on this slide this is called Osprey this has 433 qubits and then at the end of
+54:47
+the this year we're going to introduce another qubit processor called The Condor which is going to have for the
+54:53
+first time ever over a thousand qubits um and Heron which will be a series of
+55:00
+133 qubits which are coupled to other processors of 133 qubits as well so it's
+55:06
+really an exciting time to be working and superconducting qubits and be in the fields because when I first joined and I
+55:13
+saw this development roadmap for the first time you know I was very intimidated it's a lot especially when
+55:19
+you're in graduate school and you're only working with one or two qubits at the at this time like I was scaling up
+55:25
+to you know even 20 cubits seems really daunting and the idea of scaling up to a thousand at the time a few years ago
+55:32
+seemed really really hard too but every single year we've been on track and we've been able to complete everything that we've laid forward and we have a
+55:39
+plan you know to scale up to to thousands of qubits in the near future
+55:44
+and so if we put it all together you can see that we've talked about many different components today we've talked
+55:49
+about the cables we've talked about the amplifiers we've talked about the qubits we've talked about all these room
+55:55
+temperature control Electronics as well so I think you know one misconception that I just want to talk about here is
+56:01
+that when people are interested in studying Quantum I think they're only interested in the processor itself in
+56:08
+fabricating making controlling qubits and that's awesome that's like definitely a really really interesting part of it but
+56:14
+that's not actually what I did in my degree and you know I measured amplifiers and I built amplifiers crouching amplifiers four qubits four
+56:21
+qubit readout for my PhD and there's plenty of people who work on all sorts of different parts of the fridge and the
+56:28
+control electronics for their degrees or you know at their job as well because all of these need to be working so
+56:34
+precisely in order to create the technologies that we're hoping to to create in the next few years so there's
+56:40
+a lot of work to be done but not all of it is just on the processor itself right um so you have people working on you
+56:46
+know creating better cables you have people who are working on better control Electronics if you have any sorts of
+56:52
+skills that are useful in the laboratory you can work on any sorts of different layers of the quantum Computing Hardware
+56:58
+stack um and then you know for the last few minutes here I just wanted to talk about
+57:04
+some of the challenges that we still have to face going forward like I said we need to supply control
+57:09
+signals and long term we need to find Electronics um so we'll be looking at cryo CMOS
+57:15
+lines and this signal must be routed into a fridge and current coax lines
+57:20
+probably won't scale Beyond like a thousand coaxes in a standard Bridge so we need something that's a little bit
+57:26
+more flexible and a little bit higher density and in parallel we're also looking at how do we scale up to
+57:33
+millions of qubits is this all going to fit in one Fringe probably not we'll probably need multiple fridges so how do
+57:39
+we get processors that are in different fridges to talk to one another it's a really really interesting problem so
+57:46
+these are all sorts of different things that we're looking at and at the same time we're trying to build you know better Gates on the hardware we're
+57:53
+trying to make our coherence times better we're interested in making the Junctions more precise when we fabricate
+57:58
+them as well there's a lot of work to be done but it's all very very exciting
+58:04
+and just really quickly here at the end I wanted to talk a little bit about some of the errors the types of errors that
+58:10
+can occur because I know zlaco is going to dive into noise and errors in his lecture so just to give you a little bit
+58:16
+of a flavor of what's coming we sometimes talk about errors in terms of coherent and incoherent errors and
+58:23
+coherent errors are like slow noise errors that cause operations to a qubit that you didn't intend
+58:29
+and you can model this operation as a gate here so say if I wanted to
+58:35
+basically make two qubits um you know go through a c naught gate this is what the
+58:41
+unitary gate would look like if it was perfect it would have two ones on the diagonals and then on the off diagonal
+58:47
+here in the lower quadrant but what that would actually translate to in reality is something that's not you know a
+58:53
+hundred percent precise it might look like this experimental Matrix here on on
+58:58
+the right and so you can see here that it's close to one but it's not exactly one there's some amount of error there's
+59:05
+some little Epsilon of error that was introduced and so what this actually does if you look at the Block sphere
+59:11
+diagram here again is if you apply this operation and you rotate around the block sphere it creates that little that
+59:17
+little Epsilon of error which is maybe not so bad but then if you were to apply it again then you would have two Epsilon
+59:23
+and again then you have three Epsilon so the error can compound and become a pretty big problem over time and this is
+59:31
+caused by a not full complete model of all of the interactions and all of the
+59:37
+leakage of information that's happening and then on the other side we have
+59:43
+incoherent errors which are sort of fast noise errors and they're they're random
+59:48
+um so one of them is cubity coherence which is the loss of quantum information in the qubit that happens when the qubit
+59:55
+Falls or decoheres from the excited state into the ground state and then there's also de phasing time which is
+1:00:01
+the randomization of the phase so instead of like the vertical error that
+1:00:06
+would occur on the box where you would have more of a horizontal error around the equator that's Phi and then T2 which
+1:00:13
+would be the overall z-coherence time which you can see here is a combination of both the T1 error and the T5 error
+1:00:21
+and you can model that here as you can see just an example and get an average
+1:00:26
+statistic of what that T1 that D coherence error would be for every single qubit and like I said this is a
+1:00:32
+problem that we are confronting and we're continuing to try to improve upon every single day in the lab
+1:00:40
+um and you can see that we have made very significant progress with our coherence times this is a model of T2
+1:00:47
+times over time as the years go by and it's a little bit outdated this one only goes up to 2019 I think but you can see
+1:00:55
+here that it's following you know a really good path upwards and the t2 times are becoming much larger and we
+1:01:02
+expect this trend to continue and we know that soon we're going to have coherence times where that's not going
+1:01:07
+to be our biggest problem that's not going to be the dominant source of error on our processors and then we can move
+1:01:13
+on to the next dominant source of error and continue to improve our Technologies
+1:01:19
+um and very last thing I wanted to say is there are also sources of leakage in our
+1:01:24
+Quantum processors leakage is when the qubit is excited or it's driven out of what we call the qubit manifold so it's
+1:01:32
+when the qubit leaves the typical Brown and excited state or the gene the East
+1:01:38
+State and goes to the F State or the H state or in even higher state and that's bad because
+1:01:43
+you know then it's no longer necessarily A qubit anymore and we don't have good
+1:01:48
+ways of correcting those types of errors and when you're applying error correcting code you really do need it to
+1:01:54
+be within the qubit manifold and there are lots of things that can cause this error such as the bandwidth of fast
+1:02:01
+pulses can excite those transitions from single qubit Gates there's also readout error readout
+1:02:07
+signal when you're actually measuring the compute the qubit that can excite multi-photon transitions to States well
+1:02:13
+above F even and you can sort of see that here I know it's a little bit small but you can see those gaussian distributions sort of
+1:02:20
+grow and you can see more and more pop up so whether we would only theoretically like to have one for G and
+1:02:27
+one for E it really can quickly spiral out of control in b f and g and H and
+1:02:32
+all sorts of different excited States as well so this is something to be mindful of two cubic Gates can do this
+1:02:39
+um CR can the crossroads and skate can require some very strong Drive tones which basically introduce so much energy
+1:02:45
+that the qubit gets excited away and we also know we need to avoid certain frequency collisions which means
+1:02:51
+interactions with harmonics from other qubits other nearby qubits as well to avoid leakage so this is just an area of
+1:02:58
+ongoing research which I want you to be aware of because it's one of the most important areas that we're looking into in the near future
+1:03:04
+all right so that concludes uh today's lecture so just really quickly some summaries and takeaways that I want to
+1:03:10
+make sure I emphasize before we we break now you know what a real super connecting qubit looks like and the
+1:03:16
+components that make it up and how important the josephsonjunction is um you also know a little something about classical circuits as well as
+1:03:23
+these Quantum circuits you know uh yes like I said what Joseph's injunctions are how to measure and control a qubit
+1:03:30
+and specific key challenges in the field of Hardware research and Engineering as well so thank you for your attention and
+1:03:37
+I'm going to be happy to answer questions later on for you this afternoon thank you [Music]

@@ -1,9 +1,16 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import Optional, List
 import shutil
 import os
-from typing import Optional
+import uvicorn
+from contextlib import asynccontextmanager
+from dotenv import load_dotenv
+
+# Load env vars
+load_dotenv()
 
 from .database import ArcadeDBClient
 from .ingestion import IngestionPipeline
@@ -20,7 +27,8 @@ db_client._ensure_db_exists()
 # We need to pick a default embedder for the global retriever or make it dynamic per request.
 # For now, initializing with default Vertex (or Ollama if fallback kicks in)
 # The pipeline default is Vertex.
-ingestion_pipeline = IngestionPipeline(db_client, "vertex") 
+# UPDATED: defaulting to "ollama" per user request to use Gemma embeddings
+ingestion_pipeline = IngestionPipeline(db_client, "ollama") 
 retriever = Retriever(db_client, ingestion_pipeline)
 bot = RAGPipeline(retriever, db_client)
 
@@ -58,7 +66,7 @@ async def startup_event():
                      except Exception as e:
                         print(f"Error ingesting {filename}: {e}")
                 else:
-                    # print(f"[Startup] Skipping existing file: {filename}")
+                    print(f"[Startup] Skipping existing file: {filename}")
                     pass
     print("Startup check complete.")
 
@@ -123,8 +131,8 @@ async def chat(req: ChatRequest):
 async def search(req: ChatRequest):
     # Re-use ChatRequest structure for simplicity (message = query)
     # Update retriever's embedder if needed
-    if req.embedding_provider != bot.retriever.pipeline.embedder.__class__.__name__:
-        bot.retriever.pipeline = IngestionPipeline(db_client, req.embedding_provider)
+    # Update retriever's embedder always to ensure correct model usage
+    bot.retriever.pipeline = IngestionPipeline(db_client, req.embedding_provider)
     
     results = retriever.search(req.message, limit=5)
     return {"results": results}

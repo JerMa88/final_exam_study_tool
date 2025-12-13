@@ -16,18 +16,17 @@ with st.sidebar:
     
     # Model Selection
     if provider == "vertex":
+        # When using API Key, these map to standard Google GenAI models
         model_options = [
             "models/gemini-2.0-flash",
-            "models/gemini-3-pro-preview",
-            "models/gemma-3n-e4b-it",
-            "models/gemma-3-12b-it",
-            "models/gemma-3-27b-it" 
+            "models/gemini-2.5-pro",
+            "models/gemma-3-12b-it" 
         ]
     else: # ollama
         model_options = [
-            "models/gemma-3n-e4b-it",
-            "models/gemma-3-12b-it",
-            "models/gemma-3-27b-it" 
+            "gemma:2b",
+            "gemma:7b",
+            "qwen2.5:0.5b" 
         ]
     
     selected_model = st.selectbox("Select Model", model_options)
