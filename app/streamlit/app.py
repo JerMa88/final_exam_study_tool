@@ -12,21 +12,21 @@ with st.sidebar:
     st.title("Study Tool Config")
     
     # Provider Selection
-    provider = st.radio("LLM Provider", ["vertex", "ollama"], index=0)
+    provider = st.radio("LLM Provider", ["vertex", "ollama"], index=1)
     
     # Model Selection
     if provider == "vertex":
         # When using API Key, these map to standard Google GenAI models
         model_options = [
             "models/gemini-2.0-flash",
-            "models/gemini-2.5-pro",
-            "models/gemma-3-12b-it" 
+            "models/gemini-3-pro-preview",
+            "models/gemma-3-27b-it" 
         ]
     else: # ollama
         model_options = [
-            "gemma:2b",
-            "gemma:7b",
-            "qwen2.5:0.5b" 
+            "gemma3n:e4b",
+            "gemma3:270m",
+            "gemma3:27b-it-qat",
         ]
     
     selected_model = st.selectbox("Select Model", model_options)

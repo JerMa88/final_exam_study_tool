@@ -17,8 +17,8 @@ class IngestionPipeline:
         try:
             if provider == "ollama":
                 from .utils import ensure_ollama_model
-                ensure_ollama_model("gemma:2b")
-                return OllamaEmbeddings(model="gemma:2b")
+                ensure_ollama_model("embeddinggemma")
+                return OllamaEmbeddings(model="embeddinggemma")
             else:
                 # Check for API Key
                 if os.getenv("GOOGLE_API_KEY"):
@@ -27,13 +27,6 @@ class IngestionPipeline:
                 return VertexAIEmbeddings(model_name="gemini-embedding-001")
         except Exception as e:
             print(f"Warning: Failed to initialize embedder '{provider}': {e}")
-            # Fallback for startup safety, or re-raise if strict
-            # For this user app, we fallback to Ollama if Vertex/GenAI fails
-            if provider != "ollama":
-                print("Falling back to OllamaEmbeddings(model='nomic-embed-text')...")
-                from .utils import ensure_ollama_model
-                ensure_ollama_model("nomic-embed-text")
-                return OllamaEmbeddings(model="nomic-embed-text")
             raise e
 
     def process_pdf(self, file_path: str, doc_type: Literal['slide', 'textbook', 'paper']):

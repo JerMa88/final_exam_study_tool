@@ -15,24 +15,35 @@ def ensure_ollama_model(model_name: str):
         # Check if model exists
         result = subprocess.run([ollama_path, "list"], capture_output=True, text=True)
         if result.returncode == 0:
-            # Output format is: NAME  ID  SIZE  MODIFIED
-            # We check if model_name is in the output. 
-            # Note: partial matches might be an issue, but 'ollama list' output is usually one model per line.
-            # strict parsing is better.
             lines = result.stdout.strip().split('\n')[1:] # skip header
-            existing_models = [line.split()[0].split(':')[0] for line in lines] # Extract names (ignoring tags if user didn't specify)
-            # Actually user might specify tag.
+            existing_models = [line.split()[0].split(':')[0] for line in lines] 
             
-            # Simple check: if strict match is found, or if model_name is substring of a line (rudimentary)
-            # Let's rely on 'ollama pull' being smart enough or just pull if we strictly don't see it.
-            # But 'ollama pull' takes a few seconds even if present (hashing).
+            # We strictly require the model to be present.
+            # Using a simple check against the output. 
+            # Note: 'ollama list' output contains the model name. 
+            # We check if model_name matches any listed model.
             
-            # Better: try to use the model, if it fails, pull.
-            # But user asked to "pull ... first then query".
+            # Since names in 'ollama list' might be like 'gemma:2b', checking existence.
+            # Getting exact list of names from stdout for better matching is safer.
+            full_model_names = [line.split()[0] for line in lines]
+            
+            if model_name in full_model_names:
+                return # Model exists
+
+            # Fallback for untagged names if user provided tag or vice versa logic can be complex,
+            # but usually 'ollama list' returns what you can pull.
+            # If we are here, strict match failed.
             pass
 
-        print(f"Ensuring Ollama model '{model_name}' is pulled...")
-        subprocess.run([ollama_path, "pull", model_name], check=True)
-        print(f"Ollama model '{model_name}' ready.")
+        # If we reached here, model is likely missing.
+        # Check if it was a command failure or just missing in list.
+        # Actually, let's just rely on the fact we didn't return above.
+        
+        # DOUBLE CHECK: 'ollama list' always returns 0 even if empty? Yes.
+        # So we iterate and return if found. If loop finishes, we are here.
+        
+        raise RuntimeError(f"Model '{model_name}' not found. Please run 'ollama pull {model_name}' in your terminal.")
+
     except Exception as e:
-        print(f"Error ensuring Ollama model '{model_name}': {e}")
+        # Re-raising the error with a clear message or letting the RuntimeError bubble up
+        raise RuntimeError(f"Error checking Ollama model '{model_name}': {e}")
