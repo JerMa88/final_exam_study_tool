@@ -16,6 +16,7 @@ from .database import ArcadeDBClient
 from .ingestion import IngestionPipeline
 from .retrieval import Retriever
 from .pipeline import RAGPipeline
+from .cheatsheet_pipeline import CheatSheetPipeline
 
 app = FastAPI()
 
@@ -27,6 +28,7 @@ db_client = ArcadeDBClient()
 ingestion_pipeline = IngestionPipeline(db_client, "ollama") 
 retriever = Retriever(db_client, ingestion_pipeline)
 bot = RAGPipeline(retriever, db_client)
+cheatsheet_bot = CheatSheetPipeline(retriever, db_client)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PDF_DIR = os.path.join(BASE_DIR, "../../database/PDFs")
@@ -83,6 +85,20 @@ class RenameSessionRequest(BaseModel):
 
 class LinkFileRequest(BaseModel):
     file_rid: str
+
+class GenerateCheatSheetRequest(BaseModel):
+    topics: List[str]
+    session_id: str
+    model: str = "models/gemini-2.0-flash"
+    llm_provider: str = "vertex"
+    embedding_provider: str = "vertex"
+
+class RefineCheatSheetRequest(BaseModel):
+    instruction: str
+    session_id: str
+    model: str = "models/gemini-2.0-flash"
+    llm_provider: str = "vertex"
+    embedding_provider: str = "vertex"
 
 # ─── File Upload ─────────────────────────────────────────────────────
 
@@ -262,6 +278,70 @@ async def search(req: ChatRequest):
     
     results = retriever.search(req.message, limit=5, file_rids=file_rids)
     return {"results": results}
+
+# ─── Cheat Sheet ─────────────────────────────────────────────────────
+
+@app.post("/cheatsheet/generate")
+async def generate_cheatsheet(req: GenerateCheatSheetRequest):
+    global _current_embedding_provider
+    if req.embedding_provider != _current_embedding_provider:
+        cheatsheet_bot.retriever.pipeline = IngestionPipeline(db_client, req.embedding_provider)
+        bot.retriever.pipeline = IngestionPipeline(db_client, req.embedding_provider)
+        _current_embedding_provider = req.embedding_provider
+
+    file_rids = None
+    if req.session_id:
+        file_rids = db_client.get_session_file_rids(req.session_id)
+        if not file_rids:
+            file_rids = None
+
+    return StreamingResponse(
+        cheatsheet_bot.generate_stream(
+            topics=req.topics,
+            session_rid=req.session_id,
+            model_name=req.model,
+            llm_provider=req.llm_provider,
+            file_rids=file_rids,
+        ),
+        media_type="text/plain"
+    )
+
+@app.post("/cheatsheet/refine")
+async def refine_cheatsheet(req: RefineCheatSheetRequest):
+    global _current_embedding_provider
+    if req.embedding_provider != _current_embedding_provider:
+        cheatsheet_bot.retriever.pipeline = IngestionPipeline(db_client, req.embedding_provider)
+        bot.retriever.pipeline = IngestionPipeline(db_client, req.embedding_provider)
+        _current_embedding_provider = req.embedding_provider
+
+    file_rids = None
+    if req.session_id:
+        file_rids = db_client.get_session_file_rids(req.session_id)
+        if not file_rids:
+            file_rids = None
+
+    return StreamingResponse(
+        cheatsheet_bot.refine_stream(
+            instruction=req.instruction,
+            session_rid=req.session_id,
+            model_name=req.model,
+            llm_provider=req.llm_provider,
+            file_rids=file_rids,
+        ),
+        media_type="text/plain"
+    )
+
+@app.get("/sessions/{session_rid}/cheatsheet")
+def get_session_cheatsheet(session_rid: str):
+    """Get the cheat sheet for a session."""
+    cs = db_client.get_session_cheatsheet(session_rid)
+    return {"cheatsheet": cs}
+
+@app.delete("/sessions/{session_rid}/cheatsheet")
+def delete_session_cheatsheet(session_rid: str):
+    """Delete the cheat sheet for a session."""
+    db_client.delete_session_cheatsheet(session_rid)
+    return {"status": "deleted"}
 
 # ─── Utility ─────────────────────────────────────────────────────────
 

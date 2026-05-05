@@ -74,7 +74,16 @@ class ArcadeDBClient:
             "CREATE PROPERTY Message.content STRING",
             "CREATE PROPERTY Message.timestamp DATETIME",
             
-            "CREATE EDGE TYPE HAS_MESSAGE IF NOT EXISTS"
+            "CREATE EDGE TYPE HAS_MESSAGE IF NOT EXISTS",
+            
+            # --- Cheat Sheets ---
+            "CREATE VERTEX TYPE CheatSheet IF NOT EXISTS",
+            "CREATE PROPERTY CheatSheet.content STRING",
+            "CREATE PROPERTY CheatSheet.topics STRING",
+            "CREATE PROPERTY CheatSheet.created_at DATETIME",
+            "CREATE PROPERTY CheatSheet.updated_at DATETIME",
+            
+            "CREATE EDGE TYPE HAS_CHEATSHEET IF NOT EXISTS",  # StudySession -> CheatSheet
         ]
         
         for cmd in commands:
@@ -370,10 +379,81 @@ class ArcadeDBClient:
                 score = np.dot(query_vec, doc_vec) / (norm_q * norm_d)
             
             scored_chunks.append({
+                "@rid": r.get("@rid"),
                 "content": r.get("content"), 
                 "page_number": r.get("page_number"), 
                 "score": score
             })
             
         scored_chunks.sort(key=lambda x: x["score"], reverse=True)
-        return scored_chunks[:limit]
+        top_chunks = scored_chunks[:limit]
+        
+        # Enrich with parent document filename
+        for chunk in top_chunks:
+            chunk_rid = chunk.get("@rid")
+            if chunk_rid:
+                parent = self.query(
+                    f"SELECT filename FROM (TRAVERSE in('HAS_CHUNK') FROM {chunk_rid}) WHERE @type = 'SourceFile' LIMIT 1"
+                )
+                chunk["filename"] = parent[0].get("filename", "unknown") if parent else "unknown"
+            else:
+                chunk["filename"] = "unknown"
+        
+        return top_chunks
+
+    # ─── Cheat Sheet Methods ─────────────────────────────────────────
+
+    def create_cheatsheet(self, session_rid: str, topics_json: str, content: str) -> str:
+        """Create a new CheatSheet vertex and link it to the session."""
+        cmd = "INSERT INTO CheatSheet SET content = ?, topics = ?, created_at = sysdate(), updated_at = sysdate()"
+        payload = {
+            "command": cmd,
+            "language": "sql",
+            "params": {"0": content, "1": topics_json}
+        }
+        url = f"{self.base_url}/command/{self.db_name}"
+        response = requests.post(url, json=payload, auth=self.auth, headers=self.headers)
+        cs_rid = ""
+        if response.status_code == 200:
+            res = response.json().get("result", [])
+            if res:
+                cs_rid = res[0].get("@rid", "")
+        else:
+            print(f"Create cheatsheet failed: {response.text}")
+
+        if cs_rid and session_rid:
+            self.execute_command(f"CREATE EDGE HAS_CHEATSHEET FROM {session_rid} TO {cs_rid}")
+            self.execute_command(f"UPDATE {session_rid} SET updated_at = sysdate()")
+
+        return cs_rid
+
+    def update_cheatsheet(self, cheatsheet_rid: str, content: str):
+        """Update cheat sheet content after refinement."""
+        cmd = f"UPDATE {cheatsheet_rid} SET content = ?, updated_at = sysdate()"
+        payload = {
+            "command": cmd,
+            "language": "sql",
+            "params": {"0": content}
+        }
+        url = f"{self.base_url}/command/{self.db_name}"
+        requests.post(url, json=payload, auth=self.auth, headers=self.headers)
+
+    def get_session_cheatsheet(self, session_rid: str) -> Dict:
+        """Get the cheat sheet for a session (most recent)."""
+        res = self.query(
+            f"SELECT @rid, content, topics, created_at, updated_at FROM ("
+            f"TRAVERSE out('HAS_CHEATSHEET') FROM {session_rid}"
+            f") WHERE @type = 'CheatSheet' ORDER BY updated_at DESC LIMIT 1"
+        )
+        if res:
+            return res[0]
+        return {}
+
+    def delete_session_cheatsheet(self, session_rid: str):
+        """Delete the cheat sheet for a session."""
+        cs = self.get_session_cheatsheet(session_rid)
+        if cs:
+            cs_rid = cs.get("@rid", "")
+            if cs_rid:
+                self.execute_command(f"DELETE EDGE HAS_CHEATSHEET WHERE out = {session_rid} AND in = {cs_rid}")
+                self.execute_command(f"DELETE FROM {cs_rid}")

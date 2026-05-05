@@ -19,11 +19,12 @@ class Retriever:
         # 2. Search DB (optionally scoped to specific files)
         results = self.db.similarity_search(embedding, limit, file_rids=file_rids)
         
-        # 3. Format results
+        # 3. Format results (include filename for citation support)
         docs = []
         for r in results:
             content = r.get("content", "")
             page = r.get("page_number", "?")
-            docs.append(f"[Page {page}] {content}")
+            filename = r.get("filename", "unknown")
+            docs.append(f"[Source: {filename}, Page {page}] {content}")
             
         return docs

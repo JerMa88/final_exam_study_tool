@@ -65,7 +65,7 @@ def api_put(path, json_data=None):
     return None
 
 def load_session_data(session_rid):
-    """Load full session data (files, messages, conversation_id)."""
+    """Load full session data (files, messages, conversation_id, cheatsheet)."""
     data = api_get(f"/sessions/{encode_rid(session_rid)}")
     if data and "session" in data:
         st.session_state.current_session_rid = session_rid
@@ -77,6 +77,18 @@ def load_session_data(session_rid):
             for m in data.get("messages", [])
         ]
         st.session_state.session_files = data.get("files", [])
+        # Load cheat sheet if it exists
+        cs_data = api_get(f"/sessions/{encode_rid(session_rid)}/cheatsheet")
+        if cs_data and cs_data.get("cheatsheet"):
+            cs = cs_data["cheatsheet"]
+            st.session_state.cheatsheet_content = cs.get("content", "")
+            try:
+                st.session_state.cheatsheet_topics = json.loads(cs.get("topics", "[]"))
+            except (json.JSONDecodeError, TypeError):
+                st.session_state.cheatsheet_topics = []
+        else:
+            st.session_state.cheatsheet_content = None
+            st.session_state.cheatsheet_topics = []
         return data
     return None
 
@@ -96,6 +108,12 @@ if "last_prompt" not in st.session_state:
     st.session_state.last_prompt = ""
 if "sessions_list" not in st.session_state:
     st.session_state.sessions_list = []
+if "cheatsheet_content" not in st.session_state:
+    st.session_state.cheatsheet_content = None
+if "cheatsheet_topics" not in st.session_state:
+    st.session_state.cheatsheet_topics = []
+if "cheatsheet_generating" not in st.session_state:
+    st.session_state.cheatsheet_generating = False
 
 # ─── Sidebar ─────────────────────────────────────────────────────────
 
@@ -266,7 +284,7 @@ else:
     st.title("Final Exam Study Tool 📚")
     st.info("👈 Create or select a **Study Session** in the sidebar to get started.")
 
-tab1, tab2 = st.tabs(["Chat 💬", "Search 🔍"])
+tab1, tab2, tab3 = st.tabs(["Chat 💬", "Search 🔍", "Cheat Sheet 📝"])
 
 with tab1:
     if not st.session_state.current_session_rid:
@@ -366,3 +384,193 @@ with tab2:
                     st.error(f"Search failed: {res.text}")
             except Exception as e:
                 st.error(f"Connection error: {e}")
+
+with tab3:
+    st.header("Cheat Sheet Generator 📝")
+    
+    if not st.session_state.current_session_rid:
+        st.info("👈 Select a study session to generate a cheat sheet.")
+    else:
+        # ── Topics Input ──
+        st.subheader("🎯 Exam Topics")
+        st.caption("Enter the topics that will be on your exam (one per line). "
+                   "The system will search your uploaded materials for each topic and generate a dense cheat sheet.")
+        
+        default_topics = "\n".join(st.session_state.cheatsheet_topics) if st.session_state.cheatsheet_topics else ""
+        topics_text = st.text_area(
+            "Topics (one per line)",
+            value=default_topics,
+            height=150,
+            placeholder="Transformers & Attention\nPositional Encoding (RoPE)\nEthics & Fairness Metrics\nTransfer Learning & LLMs\nState Space Models",
+            key="topics_input"
+        )
+        
+        # Parse topics
+        topics = [t.strip() for t in topics_text.strip().split("\n") if t.strip()] if topics_text else []
+        
+        col_gen, col_del = st.columns([3, 1])
+        
+        with col_gen:
+            generate_disabled = len(topics) == 0
+            generate_clicked = st.button(
+                f"🚀 Generate Cheat Sheet ({len(topics)} topics)" if topics else "🚀 Generate Cheat Sheet",
+                use_container_width=True,
+                type="primary",
+                disabled=generate_disabled,
+            )
+        
+        with col_del:
+            if st.session_state.cheatsheet_content:
+                if st.button("🗑️ Clear", use_container_width=True, type="secondary"):
+                    api_delete(f"/sessions/{encode_rid(st.session_state.current_session_rid)}/cheatsheet")
+                    st.session_state.cheatsheet_content = None
+                    st.session_state.cheatsheet_topics = []
+                    st.rerun()
+        
+        # ── Generation Flow ──
+        if generate_clicked and topics:
+            st.divider()
+            st.subheader("⚙️ Generating...")
+            
+            progress_container = st.container()
+            progress_bar = st.progress(0)
+            status_items = {}
+            
+            payload = {
+                "topics": topics,
+                "session_id": st.session_state.current_session_rid,
+                "model": selected_model,
+                "llm_provider": provider,
+                "embedding_provider": "ollama",
+            }
+            
+            final_content = None
+            error_msg = None
+            
+            try:
+                with requests.post(f"{API_URL}/cheatsheet/generate", json=payload, stream=True, timeout=600) as response:
+                    if response.status_code == 200:
+                        for line in response.iter_lines():
+                            if line:
+                                try:
+                                    data = json.loads(line.decode('utf-8'))
+                                    event_type = data.get("type")
+                                    
+                                    if event_type == "topic_progress":
+                                        idx = data.get("index", 0)
+                                        total = data.get("total", 1)
+                                        topic = data.get("topic", "")
+                                        status = data.get("status", "")
+                                        
+                                        progress_bar.progress(idx / (total + 1))  # +1 for assembly step
+                                        
+                                        with progress_container:
+                                            if status == "processing":
+                                                st.write(f"⏳ **Topic {idx}/{total}:** {topic}")
+                                            elif status == "assembling":
+                                                st.write(f"🔧 **Assembling final cheat sheet...**")
+                                    
+                                    elif event_type == "topic_result":
+                                        idx = data.get("index", 0)
+                                        total = data.get("total", 1)
+                                        topic = data.get("topic", "")
+                                        with progress_container:
+                                            st.write(f"✅ **Topic {idx}/{total}:** {topic}")
+                                    
+                                    elif event_type == "cheatsheet":
+                                        final_content = data.get("content", "")
+                                        progress_bar.progress(1.0)
+                                    
+                                    elif event_type == "error":
+                                        error_msg = data.get("message", "Unknown error")
+                                        
+                                except json.JSONDecodeError:
+                                    pass
+                    else:
+                        error_msg = f"Server error ({response.status_code}): {response.text[:300]}"
+            except Exception as e:
+                error_msg = f"Request failed: {e}"
+            
+            if error_msg:
+                st.error(f"❌ {error_msg}")
+            elif final_content:
+                st.session_state.cheatsheet_content = final_content
+                st.session_state.cheatsheet_topics = topics
+                st.success("✅ Cheat sheet generated successfully!")
+                st.rerun()
+        
+        # ── Cheat Sheet Display ──
+        if st.session_state.cheatsheet_content:
+            st.divider()
+            st.subheader("📄 Your Cheat Sheet")
+            
+            # Rendered preview
+            st.markdown(st.session_state.cheatsheet_content)
+            
+            # Raw source toggle
+            with st.expander("📝 View Raw Markdown"):
+                st.code(st.session_state.cheatsheet_content, language="markdown")
+            
+            st.divider()
+            
+            # ── Refinement ──
+            st.subheader("✏️ Refine Cheat Sheet")
+            st.caption("Ask the AI to modify your cheat sheet — add details, remove sections, restructure, etc.")
+            
+            refine_input = st.text_input(
+                "Refinement instruction",
+                placeholder='e.g., "Add more equations for Flash Attention" or "Remove the ethics section"',
+                key="refine_input"
+            )
+            
+            if refine_input and st.button("🔄 Apply Refinement", use_container_width=True):
+                with st.spinner("Refining cheat sheet..."):
+                    payload = {
+                        "instruction": refine_input,
+                        "session_id": st.session_state.current_session_rid,
+                        "model": selected_model,
+                        "llm_provider": provider,
+                        "embedding_provider": "ollama",
+                    }
+                    
+                    refined_content = None
+                    refine_error = None
+                    
+                    try:
+                        with requests.post(f"{API_URL}/cheatsheet/refine", json=payload, stream=True, timeout=600) as response:
+                            if response.status_code == 200:
+                                for line in response.iter_lines():
+                                    if line:
+                                        try:
+                                            data = json.loads(line.decode('utf-8'))
+                                            event_type = data.get("type")
+                                            
+                                            if event_type == "cheatsheet":
+                                                refined_content = data.get("content", "")
+                                            elif event_type == "error":
+                                                refine_error = data.get("message", "Unknown error")
+                                        except json.JSONDecodeError:
+                                            pass
+                            else:
+                                refine_error = f"Server error ({response.status_code}): {response.text[:300]}"
+                    except Exception as e:
+                        refine_error = f"Request failed: {e}"
+                    
+                    if refine_error:
+                        st.error(f"❌ {refine_error}")
+                    elif refined_content:
+                        st.session_state.cheatsheet_content = refined_content
+                        st.success("✅ Cheat sheet refined!")
+                        st.rerun()
+            
+            st.divider()
+            
+            # ── Download ──
+            session_name_safe = (st.session_state.current_session_name or "cheatsheet").replace(" ", "_").lower()
+            st.download_button(
+                label="📥 Download as Markdown",
+                data=st.session_state.cheatsheet_content,
+                file_name=f"{session_name_safe}_cheatsheet.md",
+                mime="text/markdown",
+                use_container_width=True,
+            )
