@@ -1,4 +1,4 @@
-from typing import Iterator, Optional
+from typing import Iterator, Optional, List
 import os
 from langchain_google_vertexai import ChatVertexAI
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -35,18 +35,29 @@ class RAGPipeline:
                 # Default to Vertex AI (requires gcloud auth)
                 return ChatVertexAI(model_name=model_name)
 
-    def chat_stream(self, query: str, conversation_id: Optional[str] = None, model_name: str = "models/gemini-2.0-flash", llm_provider: str = "vertex") -> Iterator[str]:
+    def chat_stream(
+        self, 
+        query: str, 
+        conversation_id: Optional[str] = None, 
+        model_name: str = "models/gemini-2.0-flash", 
+        llm_provider: str = "vertex",
+        session_rid: Optional[str] = None,
+        file_rids: Optional[List[str]] = None,
+    ) -> Iterator[str]:
         import json
         
-        # 1. Retrieve
-        context_docs = self.retriever.search(query, limit=5)
+        # 1. Retrieve (session-scoped if file_rids provided)
+        context_docs = self.retriever.search(query, limit=5, file_rids=file_rids)
         context_str = "\n\n".join(context_docs)
         
-        # 2. Persist User Message
+        # 2. Persist User Message — create conversation if needed
         if not conversation_id:
-             conversation_id = self.db.create_conversation()
+            conversation_id = self.db.create_conversation(session_rid=session_rid)
         
         self.db.add_message(conversation_id, "user", query)
+
+        # Yield the conversation_id so frontend can track it
+        yield json.dumps({"type": "meta", "conversation_id": conversation_id}) + "\n"
 
         # 3. Setup Chain
         template = """Answer the question regarding the study materials.
@@ -88,3 +99,7 @@ class RAGPipeline:
             yield json.dumps({"type": "token", "content": error_msg}) + "\n"
             
         self.db.add_message(conversation_id, "assistant", full_response)
+        
+        # Update session timestamp if applicable
+        if session_rid:
+            self.db.execute_command(f"UPDATE {session_rid} SET updated_at = sysdate()")
