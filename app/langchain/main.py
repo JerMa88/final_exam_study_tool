@@ -21,7 +21,6 @@ app = FastAPI()
 
 # Database Client
 db_client = ArcadeDBClient()
-db_client._ensure_db_exists()
 
 # Initialize Retrieval
 # We need to pick a default embedder for the global retriever or make it dynamic per request.
@@ -80,7 +79,7 @@ class ChatRequest(BaseModel):
 @app.post("/upload")
 async def upload_file(
     file: UploadFile = File(...), 
-    type: str = Form(..., regex="^(slide|textbook|paper)$"),
+    type: str = Form(..., pattern="^(slide|textbook|paper)$"),
     embedding_provider: str = Form("vertex")
 ):
     try:
@@ -112,15 +111,16 @@ async def upload_file(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# Track which embedding provider is currently loaded
+_current_embedding_provider = "ollama"
+
 @app.post("/chat")
 async def chat(req: ChatRequest):
-    # Determine embedder for this chat (should match ingestion? 
-    # Realistically retrieval uses the same embedder as what was indexed.
-    # For now assuming one global index type or hybrid.)
-    # Update retriever's embedder if needed
-    if req.embedding_provider != bot.retriever.pipeline.embedder.__class__.__name__:
-        # Simple hack: swap pipeline in retriever
+    global _current_embedding_provider
+    # Swap embedding provider if it changed
+    if req.embedding_provider != _current_embedding_provider:
         bot.retriever.pipeline = IngestionPipeline(db_client, req.embedding_provider)
+        _current_embedding_provider = req.embedding_provider
 
     return StreamingResponse(
         bot.chat_stream(req.message, req.conversation_id, req.model, req.llm_provider),

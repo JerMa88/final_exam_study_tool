@@ -4,8 +4,7 @@ from typing import List, Literal, Optional
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_vertexai import VertexAIEmbeddings
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_community.embeddings import OllamaEmbeddings
-# from langchain_ollama import OllamaEmbeddings # Newer import if available, fallback to community
+from langchain_ollama import OllamaEmbeddings
 from .database import ArcadeDBClient
 
 class IngestionPipeline:
@@ -22,7 +21,7 @@ class IngestionPipeline:
             else:
                 # Check for API Key
                 if os.getenv("GOOGLE_API_KEY"):
-                    return GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+                    return GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
                 # Default to Vertex AI
                 return VertexAIEmbeddings(model_name="gemini-embedding-001")
         except Exception as e:

@@ -19,14 +19,14 @@ with st.sidebar:
         # When using API Key, these map to standard Google GenAI models
         model_options = [
             "models/gemini-2.0-flash",
-            "models/gemini-3-pro-preview",
-            "models/gemma-3-27b-it" 
+            "models/gemini-2.5-flash",
+            "models/gemini-2.5-pro",
         ]
     else: # ollama
         model_options = [
-            "gemma3n:e4b",
+            "gemma4:latest",
+            "gemma4:26b",
             "gemma3:270m",
-            "gemma3:27b-it-qat",
         ]
     
     selected_model = st.selectbox("Select Model", model_options)

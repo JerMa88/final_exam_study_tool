@@ -1,12 +1,12 @@
-from langchain_community.embeddings import OllamaEmbeddings
+from langchain_ollama import OllamaEmbeddings
 
 def test_gemma_embedding():
-    print("Testing gemma:2b as embedder...")
+    print("Testing embeddinggemma as embedder...")
     try:
-        # gemma:2b is a chat model, but Ollama might allow embedding with it
-        embedder = OllamaEmbeddings(model="gemma:2b")
+        embedder = OllamaEmbeddings(model="embeddinggemma")
         vec = embedder.embed_query("Hello world")
         print(f"Success! Vector length: {len(vec)}")
+        print(f"First 5 values: {vec[:5]}")
     except Exception as e:
         print(f"Failed: {e}")
 
